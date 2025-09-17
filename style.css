@@ -125,14 +125,15 @@ flex-wrap: wrap;
   display: flex;
   justify-content: center;   /* centers buttons horizontally */
   gap: 20px;                 /* space between buttons */
-  margin-top: 40px;
+  margin-top: 20px;
+  width: 100%;
 }
 
 .nav-button {
   display: flex;             /* lets us center text inside */
   align-items: center;
   justify-content: center;
-  width: 150px;              /* square size */
+  width: 250px;              /* square size */
   height: 150px;
   background-color: #4CAF50; /* green background */
   color: white;
@@ -171,5 +172,6 @@ h2{
   opacity: 0.3;       /* makes it look greyed out */
   pointer-events: none; /* disables clicks inside */
 }
+
 
 
