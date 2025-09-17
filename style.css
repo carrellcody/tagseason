@@ -1,0 +1,175 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:hover {
+  background-color: #f1f1f1;
+}
+
+input {
+  margin-bottom: 15px;
+  padding: 5px;
+  width: 300px;
+}
+
+
+.layout {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Sidebar filters */
+.filterinputs {
+  position: sticky;   /* freezes on scroll */
+  top: 10px;          /* stays pinned under header */
+  width: 40%;
+  height: fit-content;
+  /*max-height: 100vh;    doesn’t overflow screen */
+  /*overflow-y: auto;*/
+  margin-right: 20px;
+  padding: 10px;
+  border-right: 2px solid #ccc;
+  background-color: #f8f8f8;
+  font-size: 15px;
+}
+
+/* Table container takes remaining space */
+.table-container {
+  flex-grow: 1;
+  width:60%;
+}
+/*make the class section two lines*/
+.classwrap {
+display: flex;
+flex-wrap: wrap;
+}
+
+#weapon label, #sex label, #class label, #plo label, #rfw label, 
+#season label, #noapps label, #harvestCheckboxes label {
+  display: inline-block;
+  margin: 5px;
+  cursor: pointer;
+}
+
+#weapon input, #sex input, #class input, #plo input, 
+#rfw input, #season input, #noapps input, #harvestCheckboxes input {
+  display: none; /* hide actual checkbox */
+}
+
+#weapon span, #sex span, #class span, #plo span, 
+#rfw span, #season span, #noapps span, #harvestCheckboxes span {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 2px solid #333;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  user-select: none;
+}
+
+#weapon input:checked + span,
+#sex input:checked + span,
+#class input:checked + span,
+#plo input:checked + span,
+#rfw input:checked + span,
+#season input:checked + span,
+#noapps input:checked + span,
+#harvestCheckboxes input:checked + span {
+  background-color: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+
+/* make the table headers freeze during scrolling*/
+
+#itemTable thead th {
+  position: sticky;
+  top: 0;
+  background: white; /* or another color so it doesn’t overlap rows */
+  z-index: 2;        /* keeps headers above the table rows */
+  border-bottom: 2px solid #ccc; /* optional styling */
+}
+
+
+
+
+/* centering page title*/
+.page-title {
+  text-align: center;
+  position: sticky;
+  font-size: 30px;
+}
+
+
+
+.page-subtitle {
+  text-align: center;
+}
+
+/* Nav buttons on home screen*/
+.button-container {
+  display: flex;
+  justify-content: center;   /* centers buttons horizontally */
+  gap: 20px;                 /* space between buttons */
+  margin-top: 40px;
+}
+
+.nav-button {
+  display: flex;             /* lets us center text inside */
+  align-items: center;
+  justify-content: center;
+  width: 150px;              /* square size */
+  height: 150px;
+  background-color: #4CAF50; /* green background */
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  text-decoration: none;     /* remove underline */
+  border-radius: 10px;       /* rounded corners */
+  transition: background 0.3s;
+}
+
+.nav-button:hover {
+  background-color: #1f8624; /* darker on hover */
+}
+
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px; /* spacing between filter rows */
+}
+
+.filter-header {
+  font-weight: bold;
+  color: #333; /* dark gray */
+  margin-right: 8px;
+  cursor: default; /* makes it not look clickable */
+}
+
+h2{
+  font-size:23px;
+  text-align: center;
+}
+
+.disabled-section {
+  opacity: 0.3;       /* makes it look greyed out */
+  pointer-events: none; /* disables clicks inside */
+}
+
+
