@@ -13,7 +13,8 @@ let sortDirection = "asc";
 
 //Define columns that are visible
 const visibleColumnsDrawDeer = ["Tag", "Valid GMUs", "Drawn_out_level", "Chance_with_First_choice", "Chance_at_DOL","Sex","Weapon","Notes"]; 
-const visibleColumnsHarvestDeer = ["Unit",	"Category",	"Bucks",	"Antlerless",	"Total Harvest",	"Total Hunters",	"Percent Success",	"Total Rec. Days"];
+const visibleColumnsHarvestDeer = ["Unit",	"Category",	"Bucks",	"Antlerless",	"Total Harvest",	"Total Hunters",	
+  "Percent Success",	"Total Rec. Days", "Percent Public Land","Total Acres", "Public Acres"];
 
 // Map CSV headers to display names
 const headerLabelsDrawDeer = {
@@ -36,6 +37,9 @@ const headerLabelsHarvestDeer = {
   "Total Hunters" : "Total Hunters",
   "Percent Success" :"Success Rate",
   "Total Rec. Days" : "Total Rec Days"
+  ,"Percent Public Land" : "Public Land %",
+  "Total Acres" : "Total Acres",
+  "Public Acres" : "Public Acres"
 };
 
 // Toggle sort direction or switch column
@@ -595,3 +599,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   });
+
