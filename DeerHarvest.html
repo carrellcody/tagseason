@@ -20,13 +20,15 @@
   
   
  
-  <!--Harvest category-->
-  <div class="filter-row">
-    <div id="harvestcategory" class="filter-header">Harvest Statistics Category:</div>
-    <div id="harvestCheckboxes" class="checkbox-group">
-      <!-- "Any" + categories will be injected here by JS -->
-    </div>
+<div class="filter-row">
+  <div id="harvestcategory" class="filter-header">Harvest Statistics Category:</div>
+  <div id="harvestCheckboxes" class="checkbox-group">
+    <!-- "Any" + categories will be injected here by JS -->
   </div>
+    <div id="extraHarvestCheckboxes" class="checkbox-group" style="display:none;"></div>
+  <button id="toggleExtraCats" class="dropdown-btn">More...</button>
+</div>
+
 
 
    <!-- Search bar for specific units -->
@@ -39,6 +41,13 @@
     <div id="successrate" class="filter-row">
         <div class="filter-header">Minimum success rate:</div>
         <input type="number" id="minsr" placeholder="Min Success Rate">
+    </div>
+
+
+    <!--Minimum public land-->
+    <div id="publicpercent" class="filter-row">
+        <div class="filter-header">Minimum Percent Public Land:</div>
+        <input type="number" id="minpl" placeholder="Min Public %">
     </div>
 
 

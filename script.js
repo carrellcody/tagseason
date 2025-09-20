@@ -172,6 +172,7 @@ body.appendChild(fragment);
   if (rowCountEl) rowCountEl.textContent = `${data.length} tags match your criteria`;
 
 }
+
 //Render function for harvest table
 function renderHarvestTable(data, page = 1) {
   const body = document.querySelector("#deerharvesttable tbody");
@@ -254,6 +255,7 @@ function applyFilters(data) {
 
   const harvestUnit  = document.getElementById("harvestunit")?.value.trim();
   const minSuccess   = parseFloat(document.getElementById("minsr")?.value);
+  const minPL       = parseFloat(document.getElementById("minpl")?.value);
 
   let match = true;
 
@@ -277,6 +279,14 @@ function applyFilters(data) {
   if (minSuccess){
     const rowRate = parseFloat(row["Percent Success"]);
     if (isNaN(rowRate) || rowRate < minSuccess) {
+      match = false;
+    }
+  }
+
+    // Success rate filter
+  if (minPL){
+    const rowpublic = parseFloat(row["Percent Public Land"]);
+    if (isNaN(rowpublic) || rowpublic < minPL) {
       match = false;
     }
   }
@@ -464,67 +474,114 @@ function initTable({ tableId, csvFile, columns, headers }) {
 
       // ---------- Harvest Table Filters ----------
       if (tableId === "deerharvesttable") {
-        const harvestCheckboxContainer = document.getElementById("harvestCheckboxes");
-        const harvestInputs = ["harvestunit", "minsr"];
+  const harvestCheckboxContainer = document.getElementById("harvestCheckboxes");
+  const harvestInputs = ["harvestunit", "minsr", "minpl"];
 
-        if (harvestCheckboxContainer) {
-          // get unique categories from CSV
-            const categories = [...new Set(parsedData.map(row => row.Category).filter(Boolean))].sort();
+  if (harvestCheckboxContainer) {
+    // get unique categories from CSV
+    const categories = [...new Set(parsedData.map(row => row.Category).filter(Boolean))].sort();
 
-            // reference container
-            const harvestBox = document.getElementById("harvestCheckboxes");
+    // reference containers
+    const harvestBox = document.getElementById("harvestCheckboxes");
+    const extraBox = document.getElementById("extraHarvestCheckboxes");
 
-            // inject "Any" + categories
-            ["Any", ...categories].forEach(cat => {
-              const label = document.createElement("label");
+    // categories that should always be visible
+    const visibleCats = ["Any","2nd season rifle Antlered (Does not include PLO)", "3rd season rifle Antlered (Does not include PLO)", 
+      "4th  season rifle Antlered (Does not include PLO)", "All Archery Seasons", "All Muzzleloader Seasons"];
 
-              const input = document.createElement("input");
-              input.type = "checkbox";
-              input.value = cat;
+    // inject "Any" + categories
+    ["Any", ...categories].forEach(cat => {
+      const label = document.createElement("label");
 
-              // make "Any" checked by default
-              if (cat === "Any") input.checked = true;
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = cat;
 
-              const span = document.createElement("span");
-              span.textContent = cat;
+      // make "Any" checked by default
+      if (cat === "Any") input.checked = true;
 
-              label.appendChild(input);
-              label.appendChild(span);
-              harvestBox.appendChild(label);
-            });
+      const span = document.createElement("span");
+      span.textContent = cat;
 
-          // Checkbox change logic
-          harvestCheckboxContainer.addEventListener("change", e => {
-            const target = e.target;
-            if (target.tagName === "INPUT" && target.type === "checkbox") {
-              if (target.value === "Any" && target.checked) {
-                // If "Any" is checked, uncheck everything else
-                harvestCheckboxContainer.querySelectorAll("input[type=checkbox]").forEach(cb => {
-                  if (cb.value !== "Any") cb.checked = false;
-                });
-              } else if (target.value !== "Any" && target.checked) {
-                // If a real category is checked, uncheck "Any"
-                const anyBox = harvestCheckboxContainer.querySelector("input[value=Any]");
-                if (anyBox) anyBox.checked = false;
-              }
-              currentPage = 1;
-              renderFn(applyFilters(parsedData), currentPage);
-            }
-          });
-        }
+      label.appendChild(input);
+      label.appendChild(span);
 
-        // wire up other harvest inputs
-        harvestInputs.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) {
-            const eventType = el.tagName === "INPUT" && el.type === "text" ? "input" : "change";
-            el.addEventListener(eventType, () => {
-              currentPage = 1;
-              renderFn(applyFilters(parsedData), currentPage);
-            });
-          }
-        });
+      if (visibleCats.includes(cat)) {
+        harvestBox.appendChild(label);
+      } else {
+        extraBox.appendChild(label);
       }
+    });
+
+    // Hide "More…" button if no extras
+    if (extraBox.children.length === 0) {
+      const toggleBtn = document.getElementById("toggleExtraCats");
+      if (toggleBtn) toggleBtn.style.display = "none";
+    }
+
+    // Checkbox change logic
+    harvestCheckboxContainer.addEventListener("change", e => {
+      const target = e.target;
+      if (target.tagName === "INPUT" && target.type === "checkbox") {
+        if (target.value === "Any" && target.checked) {
+          // If "Any" is checked, uncheck everything else
+          harvestCheckboxContainer.querySelectorAll("input[type=checkbox]").forEach(cb => {
+            if (cb.value !== "Any") cb.checked = false;
+          });
+          extraBox.querySelectorAll("input[type=checkbox]").forEach(cb => {
+            cb.checked = false;
+          });
+        } else if (target.value !== "Any" && target.checked) {
+          // If a real category is checked, uncheck "Any"
+          const anyBox = harvestCheckboxContainer.querySelector("input[value=Any]");
+          if (anyBox) anyBox.checked = false;
+        }
+        currentPage = 1;
+        renderFn(applyFilters(parsedData), currentPage);
+      }
+    });
+
+    // Also listen for changes inside extra checkboxes
+    extraBox.addEventListener("change", e => {
+      const target = e.target;
+      if (target.tagName === "INPUT" && target.type === "checkbox") {
+        const anyBox = harvestCheckboxContainer.querySelector("input[value=Any]");
+        if (anyBox && target.checked) anyBox.checked = false;
+        currentPage = 1;
+        renderFn(applyFilters(parsedData), currentPage);
+      }
+    });
+  }
+
+  // wire up other harvest inputs
+  harvestInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const eventType = el.tagName === "INPUT" && el.type === "text" ? "input" : "change";
+      el.addEventListener(eventType, () => {
+        currentPage = 1;
+        renderFn(applyFilters(parsedData), currentPage);
+      });
+    }
+  });
+
+  // Toggle "More" categories
+const toggleBtn = document.getElementById("toggleExtraCats");
+if (toggleBtn) {
+  toggleBtn.addEventListener("click", () => {
+    const extraBox = document.getElementById("extraHarvestCheckboxes");
+    if (extraBox.style.display === "none") {
+      extraBox.style.display = "block";
+      toggleBtn.textContent = "Less...";
+    } else {
+      extraBox.style.display = "none";
+      toggleBtn.textContent = "More...";
+    }
+  });
+}
+
+}
+
 
       // ---------- Pagination ----------
       const nextBtn = document.getElementById("nextPage");
@@ -595,8 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
     csvFile: "DeerHarvest25.csv",
     columns: visibleColumnsHarvestDeer,
     headers: headerLabelsHarvestDeer,
-    extraFilters: ["harvestcat", "harvestunit", "successrate"]
+    extraFilters: ["harvestcat", "harvestunit", "successrate","publicpercent"]
   });
 
   });
-
