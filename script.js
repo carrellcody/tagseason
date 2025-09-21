@@ -12,9 +12,12 @@ let sortDirection = "asc";
 
 
 //Define columns that are visible
-const visibleColumnsDrawDeer = ["Tag", "Valid GMUs", "Drawn_out_level", "Chance_with_First_choice", "Chance_at_DOL","Sex","Weapon","Notes"]; 
+const visibleColumnsDrawDeer = ["Tag", "Valid GMUs", "Drawn_out_level", "Chance_with_First_choice", "Chance_at_DOL",
+  "Sex","Weapon","Total_Acres"];
+  
+  //,"Public_Acres","Public_Percent", "Notes"]; 
 const visibleColumnsHarvestDeer = ["Unit",	"Category",	"Bucks",	"Antlerless",	"Total Harvest",	"Total Hunters",	
-  "Percent Success",	"Total Rec. Days", "Percent Public Land","Total Acres", "Public Acres"];
+  "Percent Success",	"Total Rec. Days", "percent_public","Acres", "Acres Public"];
 
 // Map CSV headers to display names
 const headerLabelsDrawDeer = {
@@ -25,7 +28,10 @@ const headerLabelsDrawDeer = {
   "Chance_at_DOL": "Chance at Drawn out level",
   "Sex": "Sex",
   "Weapon": "Weapon Type",
-  "Notes": "Extra Info"
+  "Notes": "Extra Info",
+  "Total_Acres": "Total Acres Across All units",
+  "Public_Acres": "Public Acres Across All units",
+  "Public_Percent": "Percent Public Land Across All units"
 };
 
 const headerLabelsHarvestDeer = {
@@ -37,9 +43,9 @@ const headerLabelsHarvestDeer = {
   "Total Hunters" : "Total Hunters",
   "Percent Success" :"Success Rate",
   "Total Rec. Days" : "Total Rec Days"
-  ,"Percent Public Land" : "Public Land %",
-  "Total Acres" : "Total Acres",
-  "Public Acres" : "Public Acres"
+  ,"percent_public" : "Public Land %",
+  "Acres" : "Total Acres",
+  "Acres Public" : "Public Acres"
 };
 
 // Toggle sort direction or switch column
@@ -116,7 +122,12 @@ function sortData(data) {
 
 
 // Render function with pagination and mapping to pdf links for the deer DOA 
-function renderDrawTable(data, page = 1, columns = visibleColumnsDrawDeer, tableEl = document.getElementById("itemTable")) {
+function renderDrawTable(
+  data,
+  page = 1,
+  columns = visibleColumnsDrawDeer,
+  tableEl = document.getElementById("itemTable")
+) {
   const body = tableEl.querySelector("tbody");
   body.innerHTML = "";
 
@@ -126,16 +137,32 @@ function renderDrawTable(data, page = 1, columns = visibleColumnsDrawDeer, table
   const end = start + rowsPerPage;
   const rowsToShow = sortedData.slice(start, end);
 
-  // Add links to the tag column to take you to the correct pdf constants defined ONCE, not inside map()
-  const pdfUrl = encodeURIComponent("https://cpw.widen.net/s/fm5zxrbhwz/postdrawrecapreport_deer-25_05102025_1540.pdf");
+  // Add links to the tag column to take you to the correct pdf
+  const pdfUrl = encodeURIComponent(
+    "https://cpw.widen.net/s/fm5zxrbhwz/postdrawrecapreport_deer-25_05102025_1540.pdf"
+  );
   const pdfjsViewer = "https://mozilla.github.io/pdf.js/web/viewer.html";
 
+  // Define which columns should be truncated
+  const longTextCols = ["Notes"]; 
+
   // Create a fragment to batch DOM updates
-const fragment = document.createDocumentFragment();
+  const fragment = document.createDocumentFragment();
 rowsToShow.forEach(row => {
   const tr = document.createElement("tr");
+
   columns.forEach(col => {
     const td = document.createElement("td");
+
+    // Step 3: add arrow indicator only for the first column
+    if (col === "Tag") {
+      const expandIcon = document.createElement("span");
+      expandIcon.textContent = "▶"; // collapsed
+      expandIcon.style.marginRight = "6px";
+      td.appendChild(expandIcon);
+    }
+
+    // existing td population logic
     if (col === "Tag") {
       const code = row[col];
       const pageNum = huntCodeMap[code];
@@ -148,21 +175,79 @@ rowsToShow.forEach(row => {
         a.textContent = code;
         td.appendChild(a);
       } else {
-        td.textContent = code ?? "";
+        td.appendChild(document.createTextNode(code ?? ""));
       }
+    } else if (longTextCols.includes(col)) {
+      const text = row[col] ?? "";
+      td.textContent = text;
+      td.title = text;
+      td.classList.add("longtext");
     } else {
       td.textContent = row[col] ?? "";
     }
+
     tr.appendChild(td);
   });
+
+  // Step 3: add click handler for expanding/collapsing sub-table
+  tr.addEventListener("click", () => {
+    const nextRow = tr.nextSibling;
+    const firstTd = tr.querySelector("td span"); // the arrow span
+    if (nextRow && nextRow.classList.contains("subrow")) {
+      nextRow.remove();
+      if (firstTd) firstTd.textContent = "▶"; // collapsed
+    } else {
+      if (firstTd) firstTd.textContent = "▼"; // expanded
+
+      // create sub-table for units (same logic as before)
+      const subTr = document.createElement("tr");
+      subTr.classList.add("subrow");
+      const subTd = document.createElement("td");
+      subTd.colSpan = columns.length;
+      subTd.style.padding = "8px 0";
+      subTd.style.backgroundColor = "#f9f9f9";
+
+      const subTable = document.createElement("table");
+      subTable.classList.add("subtable");
+
+      // create header
+      const headerRow = document.createElement("tr");
+      const unitColumns = Object.keys(unitAttributes[Object.keys(unitAttributes)[0]] || {});
+      unitColumns.forEach(uc => {
+        const th = document.createElement("th");
+        th.textContent = uc;
+        headerRow.appendChild(th);
+      });
+      subTable.appendChild(headerRow);
+
+      // add unit rows
+      const validUnits = row["Valid GMUs"].split(",").map(u => u.trim());
+      validUnits.forEach(unit => {
+        if (unitAttributes[unit]) {
+          const dataRow = document.createElement("tr");
+          unitColumns.forEach(uc => {
+            const td = document.createElement("td");
+            td.textContent = unitAttributes[unit][uc] ?? "";
+            dataRow.appendChild(td);
+          });
+          subTable.appendChild(dataRow);
+        }
+      });
+
+      subTd.appendChild(subTable);
+      subTr.appendChild(subTd);
+      tr.parentNode.insertBefore(subTr, tr.nextSibling);
+    }
+  });
+
   fragment.appendChild(tr);
 });
-// ✅ Append all rows in one operation
-body.appendChild(fragment);
 
 
+  // Append all rows in one operation
+  body.appendChild(fragment);
 
-
+  // Pagination info
   const pageCount = Math.max(1, Math.ceil(data.length / rowsPerPage));
   const pageInfoEl = document.getElementById("pageInfo");
   if (pageInfoEl) pageInfoEl.textContent = `Page ${page} of ${pageCount}`;
@@ -170,8 +255,9 @@ body.appendChild(fragment);
   // Update row count
   const rowCountEl = document.getElementById("rowCount");
   if (rowCountEl) rowCountEl.textContent = `${data.length} tags match your criteria`;
-
 }
+
+
 
 //Render function for harvest table
 function renderHarvestTable(data, page = 1) {
@@ -283,7 +369,7 @@ function applyFilters(data) {
     }
   }
 
-    // Success rate filter
+    // Percent Public Land filter
   if (minPL){
     const rowpublic = parseFloat(row["Percent Public Land"]);
     if (isNaN(rowpublic) || rowpublic < minPL) {
@@ -319,6 +405,23 @@ function applyFilters(data) {
   // ---------- default fallback ----------
   return data;
 }
+
+//Laod unit attributes 
+let unitAttributes = {};
+
+Papa.parse("gmu_public_land.csv", {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    results.data.forEach(row => {
+      const unit = row.GMUID;
+      if (unit) unitAttributes[unit] = row;
+    });
+  }
+});
+
+
 
 
 //Load the draw recap mapping
@@ -642,7 +745,7 @@ function toggleCheckboxes() {
 document.addEventListener("DOMContentLoaded", () => {
   initTable({
     tableId: "itemTable",
-    csvFile: "FullDeer25.csv",
+    csvFile: "FullDeer25Final.csv",
     columns: visibleColumnsDrawDeer,
     headers: headerLabelsDrawDeer
   });

@@ -59,6 +59,36 @@ display: flex;
 flex-wrap: wrap;
 }
 
+/* Limit 2nd column, allow wrapping */
+#itemTable td:nth-child(2),
+#itemTable th:nth-child(2),
+#itemTable td:nth-child(9),
+#itemTable th:nth-child(9) {
+  max-width: 80px;
+  white-space: normal; /* allow wrapping */
+  word-wrap: break-word;
+}
+
+/* Limit 2nd column, allow wrapping */
+#itemTable td:nth-child(6),
+#itemTable th:nth-child(6),
+#itemTable td:nth-child(7),
+#itemTable th:nth-child(7) {
+  max-width: 40px;
+  min-width:40px;
+  white-space: normal; /* allow wrapping */
+  word-wrap: break-word;
+}
+
+#itemTable td:nth-child(11) {
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;  /* adds "…" */
+  cursor: help;
+}
+
+
 #weapon label, #sex label, #class label, #plo label, #rfw label, 
 #season label, #noapps label, #harvestCheckboxes label, #extraHarvestCheckboxes label{
   display: inline-block;
@@ -229,3 +259,36 @@ h2{
     box-shadow: none; /* no shadow for home icon */
 }
 
+
+
+/* Subtable styling */
+.subrow td {
+  padding: 0;
+  background-color: #f9f9f9; /* slightly lighter */
+}
+
+.subtable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 5px 0;
+  font-size: 0.9em;
+}
+
+.subtable th, .subtable td {
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.subtable th {
+  background-color: #e2e2e2;
+  font-weight: bold;
+}
+
+.subtable tr:nth-child(even) td {
+  background-color: #f1f1f1;
+}
+
+.subtable tr:hover td {
+  background-color: #e6f7ff;
+}
