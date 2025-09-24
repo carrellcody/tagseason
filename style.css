@@ -64,7 +64,7 @@ flex-wrap: wrap;
 #itemTable th:nth-child(2),
 #itemTable td:nth-child(9),
 #itemTable th:nth-child(9) {
-  max-width: 80px;
+  max-width: 120px;
   white-space: normal; /* allow wrapping */
   word-wrap: break-word;
 }
@@ -80,7 +80,7 @@ flex-wrap: wrap;
   word-wrap: break-word;
 }
 
-#itemTable td:nth-child(11) {
+#itemTable td:nth-child(8) {
   max-width: 150px;
   white-space: nowrap;
   overflow: hidden;

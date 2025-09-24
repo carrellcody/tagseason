@@ -13,7 +13,7 @@ let sortDirection = "asc";
 
 //Define columns that are visible for the draw table
 const visibleColumnsDrawDeer = ["Tag", "Valid GMUs", "Drawn_out_level", "Chance_with_First_choice", "Chance_at_DOL",
-  "Sex","Weapon","Total_Acres"];
+  "Sex","Weapon", "Notes"];
   
 //Define columns that are visible for the subtable in the draw results
 const visibleColsSubDrawTable = ["Unit", "Bucks", "Antlerless", "Total Hunters","Percent Success","Category","Acres",
@@ -32,11 +32,12 @@ const headerLabelsDrawDeer = {
   "Chance_with_First_choice": "Chance to draw with indicated prefrence points at first choice",
   "Chance_at_DOL": "Chance at Drawn out level",
   "Sex": "Sex",
-  "Weapon": "Weapon Type",
+  "Weapon": "Weapon",
   "Notes": "Extra Info",
   "Total_Acres": "Total Acres Across All units",
   "Public_Acres": "Public Acres Across All units",
-  "Public_Percent": "Percent Public Land Across All units"
+  "Public_Percent": "Percent Public Land Across All units",
+  "Notes":"Notes"
 };
 
 const headerLabelsHarvestDeer = {
