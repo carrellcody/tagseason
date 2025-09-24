@@ -11,13 +11,18 @@ let sortDirection = "asc";
 
 
 
-//Define columns that are visible
+//Define columns that are visible for the draw table
 const visibleColumnsDrawDeer = ["Tag", "Valid GMUs", "Drawn_out_level", "Chance_with_First_choice", "Chance_at_DOL",
   "Sex","Weapon","Total_Acres"];
   
+//Define columns that are visible for the subtable in the draw results
+const visibleColsSubDrawTable = ["Unit", "Bucks", "Antlerless", "Total Hunters","Percent Success","Category","Acres",
+  "Acres Public", "percent_public", "Hunters Density Per Sq. Mile","Hunters Density Per Public Sq. Mile"]; 
+
+
   //,"Public_Acres","Public_Percent", "Notes"]; 
 const visibleColumnsHarvestDeer = ["Unit",	"Category",	"Bucks",	"Antlerless",	"Total Harvest",	"Total Hunters",	
-  "Percent Success",	"Total Rec. Days", "percent_public","Acres", "Acres Public"];
+  "Percent Success",	"Total Rec. Days", "percent_public","Acres", "Acres Public","Hunters Density Per Sq. Mile","Hunters Density Per Public Sq. Mile"];
 
 // Map CSV headers to display names
 const headerLabelsDrawDeer = {
@@ -47,6 +52,22 @@ const headerLabelsHarvestDeer = {
   "Acres" : "Total Acres",
   "Acres Public" : "Public Acres"
 };
+
+
+const headerLabelsSubDraw = {
+"Unit":"Unit",		
+"Bucks": "Bucks Killed",	
+"Antlerless": "Antlerless Killed",	
+"Total Hunters" :"Total Hunters", 	
+  "Percent Success":"Percent Success",	
+  "Category":"Harvest Statistic Category",
+   "Acres":"Acres", 
+  "Acres Public":"Public Acres",
+  "percent_public":"Percent Public Land",
+  "Hunters Density Per Sq. Mile":"Hunter Density Per Sq. Mile (x1000)",
+  "Hunters Density Per Public Sq. Mile":"Hunter Density Per Public Sq. Mile (x1000)"
+
+}
 
 // Toggle sort direction or switch column
 function toggleSort(col) {
@@ -82,43 +103,6 @@ function sortData(data) {
     return 0;
   });
 }
-
-//function to update table based on preference points
-  // keep track of the last slider value
-  let lastPPLimit = null;
-    function updateColumnBasedOnSlider(data, tableId) {
-  // Only apply slider logic for the draw table
-  if (tableId === "itemTable") {
-    const slider = document.getElementById("PPSlide");
-    if (!slider) return data;
-
-    const ppLimit = parseInt(slider.value, 10);
-
-    // ✅ Only update if the slider actually changed
-    if (ppLimit !== lastPPLimit) {
-      lastPPLimit = ppLimit;
-
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        const dolValue = parseFloat(row["DOL"]);
-
-        if (!isNaN(dolValue)) {
-          if (dolValue < ppLimit) {
-            row["Chance_with_First_choice"] = "100%";
-          } else if (Math.round(dolValue) === ppLimit) {
-            row["Chance_with_First_choice"] = row["Chance_at_DOL"];
-          } else {
-            row["Chance_with_First_choice"] = "0%";
-          }
-        }
-      }
-    }
-  }
-
-  return data; // same array (mutated only if needed)
-}
-
-
 
 
 // Render function with pagination and mapping to pdf links for the deer DOA 
@@ -213,19 +197,19 @@ rowsToShow.forEach(row => {
       // create header
       const headerRow = document.createElement("tr");
       const unitColumns = Object.keys(unitAttributes[Object.keys(unitAttributes)[0]] || {});
-      unitColumns.forEach(uc => {
+      visibleColsSubDrawTable.forEach(vc => {
         const th = document.createElement("th");
-        th.textContent = uc;
+        th.textContent = headerLabelsSubDraw[vc] || vc;
         headerRow.appendChild(th);
       });
       subTable.appendChild(headerRow);
 
       // add unit rows
-      const validUnits = row["Valid GMUs"].split(",").map(u => u.trim());
+      const validUnits = row["harvestunit"].split(",").map(u => u.trim());
       validUnits.forEach(unit => {
         if (unitAttributes[unit]) {
           const dataRow = document.createElement("tr");
-          unitColumns.forEach(uc => {
+          visibleColsSubDrawTable.forEach(uc => {
             const td = document.createElement("td");
             td.textContent = unitAttributes[unit][uc] ?? "";
             dataRow.appendChild(td);
@@ -409,13 +393,13 @@ function applyFilters(data) {
 //Laod unit attributes 
 let unitAttributes = {};
 
-Papa.parse("gmu_public_land.csv", {
+Papa.parse("DeerHarvest25.csv", {
   download: true,
   header: true,
   skipEmptyLines: true,
   complete: function(results) {
     results.data.forEach(row => {
-      const unit = row.GMUID;
+      const unit = row.harvestunit;
       if (unit) unitAttributes[unit] = row;
     });
   }
@@ -537,6 +521,62 @@ function initTable({ tableId, csvFile, columns, headers }) {
             }
           }
         });
+
+        // --- Start: Resident-only RFW control logic ---
+        function updateRFWState() {
+          const classVals = Array.from(document.querySelectorAll('input[name="class"]:checked')).map(cb => cb.value);
+          // Decide what counts as a resident class — adjust these values to match your CSV/class values if needed
+          const residentKeys = ["A_R", "Y_R", "L_R", "L_U"]; // L_U/L_R included if you want landowner to be treated as resident
+          const isResident = classVals.some(v => residentKeys.includes(v));
+
+          const rfwContainer = document.getElementById("rfw");
+          if (!rfwContainer) return;
+
+          // Find the radio inputs inside the rfw container
+          const rfwInputs = Array.from(rfwContainer.querySelectorAll('input[name="rfw"]'));
+          const rfwLabels = Array.from(rfwContainer.querySelectorAll("label"));
+
+          if (!isResident) {
+            // Not resident -> disable RFW and set to "No" (don't show any RFW tags)
+            rfwInputs.forEach(inp => {
+              inp.disabled = true;
+              // set checked according to preference: choose "N" (No RFW tags) to avoid accidental inclusion
+              if (inp.value === "N") inp.checked = true;
+              else inp.checked = false;
+            });
+            // add a visual disabled class so the container looks greyed out
+            rfwContainer.classList.add("control-disabled");
+          } else {
+            // Resident -> enable RFW and default to "Y" (show all tags) if nothing checked
+            rfwInputs.forEach(inp => inp.disabled = false);
+            rfwContainer.classList.remove("control-disabled");
+            // if nothing is currently checked, set default (optional)
+            if (!rfwInputs.some(i => i.checked)) {
+              const defaultInput = rfwInputs.find(i => i.value === "Y");
+              if (defaultInput) defaultInput.checked = true;
+            }
+          }
+
+          // re-render to apply filter changes
+          currentPage = 1;
+          // If parsedData is available in this scope, call render; otherwise use the render flow you already call via listeners
+          try {
+            // prefer the central renderFn via applyFilters: this will keep consistent filtering
+            renderDrawTable(applyFilters(parsedData), currentPage);
+          } catch (e) {
+            // fallback: trigger the main render used in this scope
+            renderFn(applyFilters(parsedData), currentPage);
+          }
+        }
+
+        // Hook updateRFWState to class radio changes (call once here to ensure wiring)
+        document.querySelectorAll('input[name="class"]').forEach(cb => {
+          cb.addEventListener("change", updateRFWState);
+        });
+
+        // Run once to initialize state immediately
+        updateRFWState();
+        // --- End: Resident-only RFW control logic ---
 
         // "Any" logic for Sex checkboxes
         document.querySelectorAll('input[name="sex"]').forEach(cb => {

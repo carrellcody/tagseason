@@ -292,3 +292,24 @@ h2{
 .subtable tr:hover td {
   background-color: #e6f7ff;
 }
+
+#itemTable .subtable th:nth-child(6),
+#itemTable .subtable td:nth-child(6)
+ {
+  width: 300px;
+  max-width: 300px  ;   /* or whatever width you want */
+  white-space: normal; /* allow wrapping instead of squishing */
+}
+#itemTable .subtable th:nth-child(7),
+#itemTable .subtable td:nth-child(7)
+ {
+  width: 100px;
+  max-width: 100px  ;   /* or whatever width you want */
+  white-space: normal; /* allow wrapping instead of squishing */
+}
+
+/* visually greyed-out controls for disabled buttons (e.g. RFW) */
+.control-disabled {
+  opacity: 0.5;
+  pointer-events: none; /* prevents clicks on children (radios already disabled) */
+}
