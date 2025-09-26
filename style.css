@@ -313,3 +313,4 @@ h2{
   opacity: 0.5;
   pointer-events: none; /* prevents clicks on children (radios already disabled) */
 }
+

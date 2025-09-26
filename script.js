@@ -7,6 +7,14 @@ let parsedData = []; // global storage
 // Sorting state
 let sortColumn = null;
 let sortDirection = "asc";
+let globalRanges = {}; 
+//Laod unit attributes 
+let globalMin = null;
+let globalMax = null;
+
+// Load unit attributes and compute global numeric ranges for coloring
+let unitAttributes = {};
+// ensure declared (if you declared earlier remove duplication)
 
 
 
@@ -62,12 +70,11 @@ const headerLabelsSubDraw = {
 "Total Hunters" :"Total Hunters", 	
   "Percent Success":"Percent Success",	
   "Category":"Harvest Statistic Category",
-   "Acres":"Acres", 
+  "Acres":"Acres", 
   "Acres Public":"Public Acres",
   "percent_public":"Percent Public Land",
   "Hunters Density Per Sq. Mile":"Hunter Density Per Sq. Mile (x1000)",
   "Hunters Density Per Public Sq. Mile":"Hunter Density Per Public Sq. Mile (x1000)"
-
 }
 
 // Toggle sort direction or switch column
@@ -106,6 +113,60 @@ function sortData(data) {
 }
 
 
+
+
+// Colorize multiple columns, each using its own min/max from globalRanges
+function colorizeColumns(table, colHeaderMap) {
+  if (!table || !colHeaderMap) return;
+
+  Object.entries(colHeaderMap).forEach(([colIndex, config]) => {
+    // support either string (old way) or object with reverse
+    let headerName, reverse;
+    if (typeof config === "string") {
+      headerName = config;
+      reverse = false; // default old behavior
+    } else {
+      headerName = config.name;
+      reverse = config.reverse ?? false;
+    }
+
+    const range = globalRanges[headerName];
+    if (!range) return;
+
+    const { min, max } = range;
+
+    Array.from(table.querySelectorAll("tbody tr")).forEach((row, rowIndex) => {
+      if (rowIndex === 0) return; // skip header row
+      const cell = row.cells[colIndex];
+      if (!cell) return;
+
+      const raw = String(cell.textContent ?? "").trim();
+      const cleaned = raw.replace(/[,()%\s]/g, "").replace(/[^\d.\-]/g, "");
+      const value = parseFloat(cleaned);
+      if (isNaN(value)) return;
+
+      let ratio = (value - min) / (max - min);
+      ratio = Math.max(0, Math.min(1, ratio));
+
+      if (reverse) ratio = 1 - ratio;
+
+      const hue = ratio * 120; // red → green
+      const saturation = 50;
+      const lightness = 75;
+
+      cell.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
 // Render function with pagination and mapping to pdf links for the deer DOA 
 function renderDrawTable(
   data,
@@ -133,7 +194,7 @@ function renderDrawTable(
 
   // Create a fragment to batch DOM updates
   const fragment = document.createDocumentFragment();
-rowsToShow.forEach(row => {
+  rowsToShow.forEach(row => {
   const tr = document.createElement("tr");
 
   columns.forEach(col => {
@@ -207,24 +268,61 @@ rowsToShow.forEach(row => {
 
       // add unit rows
       const validUnits = row["harvestunit"].split(",").map(u => u.trim());
-      validUnits.forEach(unit => {
-        if (unitAttributes[unit]) {
-          const dataRow = document.createElement("tr");
-          visibleColsSubDrawTable.forEach(uc => {
-            const td = document.createElement("td");
-            td.textContent = unitAttributes[unit][uc] ?? "";
-            dataRow.appendChild(td);
-          });
-          subTable.appendChild(dataRow);
-        }
-      });
+validUnits.forEach(unit => {
+  if (unitAttributes[unit]) {
+    const dataRow = document.createElement("tr");
 
-      subTd.appendChild(subTable);
-      subTr.appendChild(subTd);
-      tr.parentNode.insertBefore(subTr, tr.nextSibling);
+    visibleColsSubDrawTable.forEach((uc, colIndex) => {
+      const td = document.createElement("td");
+
+      if (uc === "Unit") {
+        // get unit name + onx url
+        const unitName = unitAttributes[unit][uc] ?? "";
+        const url = unitAttributes[unit]["onx"]; // col 25
+        if (unitName && url) {
+          td.innerHTML = `<a href="${url}" target="_blank">${unitName}</a>`;
+        } else {
+          td.textContent = unitName;
+        }
+      } else if (uc === "onx") {
+        // don’t render this column at all
+        return;
+      } else {
+        td.textContent = unitAttributes[unit][uc] ?? "";
+      }
+
+      dataRow.appendChild(td);
+    });
+
+    subTable.appendChild(dataRow);
+  }
+});
+
+
+        subTd.appendChild(subTable);
+        subTr.appendChild(subTd);
+        tr.parentNode.insertBefore(subTr, tr.nextSibling);
+
+        // colorize just this subtable
+        const colMap = {
+          8: "percent_public",
+          9: "Hunters Density Per Sq. Mile",
+         10: "Hunters Density Per Public Sq. Mile",
+          };
+
+
+
+    Object.entries(colMap).forEach(([colIndex, headerName]) => {
+  colorizeColumns(subTable, {
+  9: {name: "Hunters Density Per Sq. Mile", reverse: true},
+  10: {name: "Hunters Density Per Public Sq. Mile", reverse: true},
+  8: {name: "percent_public", reverse: false}
+    });
+
+});
+
     }
   });
-
   fragment.appendChild(tr);
 });
 
@@ -275,7 +373,7 @@ function applyFilters(data) {
   function filterDrawPage(row, filterState) {
     let match = true;
 
-    const { nameSearch, sexSelect, classSelect, ploSelect, rfwSelect, seasonSelect, ppLimit, noappsSelect } = filterState;
+    const { nameSearch, sexSelect, classSelect, ploSelect, rfwSelect, seasonSelect, ppLimit, ppmin, noappsSelect } = filterState;
 
     // ---- Specific Unit search ----
     if (nameSearch) {
@@ -301,9 +399,12 @@ function applyFilters(data) {
       }
     }
 
-    // PP filter
+    // ✅ PP (DOL) filter
     const dolValue = parseFloat(row.DOL);
-    if (!isNaN(dolValue) && dolValue > ppLimit) match = false;
+    if (!isNaN(dolValue)) {
+      if (!isNaN(ppmin) && dolValue < ppmin) match = false;
+      if (!isNaN(ppLimit) && dolValue > ppLimit) match = false;
+    }
 
     // PLO filter
     if (ploSelect.includes("N") && row.PLO === "Yes") match = false;
@@ -321,50 +422,49 @@ function applyFilters(data) {
 
   // ---------- filters for DeerHarvest.html ----------
   function filterHarvestPage(row) {
-  const harvestCats = Array.from(document.querySelectorAll("#harvestCheckboxes input[type=checkbox]:checked"))
-    .map(cb => cb.value);
+    const harvestCats = Array.from(document.querySelectorAll("#harvestCheckboxes input[type=checkbox]:checked"))
+      .map(cb => cb.value);
 
-  const harvestUnit  = document.getElementById("harvestunit")?.value.trim();
-  const minSuccess   = parseFloat(document.getElementById("minsr")?.value);
-  const minPL       = parseFloat(document.getElementById("minpl")?.value);
+    const harvestUnit  = document.getElementById("harvestunit")?.value.trim();
+    const minSuccess   = parseFloat(document.getElementById("minsr")?.value);
+    const minPL        = parseFloat(document.getElementById("minpl")?.value);
 
-  let match = true;
+    let match = true;
 
-  // Category filter
-  if (harvestCats.length && !harvestCats.includes("Any")) {
-    if (!harvestCats.includes(row.Category)) {
-      match = false;
-    }
-  }
-
-  // Unit filter
-  if (harvestUnit) {
-     const units = harvestUnit.split(",").map(u => u.trim()).filter(u => u !== "");
-    // Require exact match with at least one of the entered units
-    if (!units.includes(String(row.Unit))) {
-      match = false;
-        }
+    // Category filter
+    if (harvestCats.length && !harvestCats.includes("Any")) {
+      if (!harvestCats.includes(row.Category)) {
+        match = false;
       }
-
-  // Success rate filter
-  if (minSuccess){
-    const rowRate = parseFloat(row["Percent Success"]);
-    if (isNaN(rowRate) || rowRate < minSuccess) {
-      match = false;
     }
-  }
+
+    // Unit filter
+    if (harvestUnit) {
+      const units = harvestUnit.split(",").map(u => u.trim()).filter(u => u !== "");
+      // Require exact match with at least one of the entered units
+      if (!units.includes(String(row.Unit))) {
+        match = false;
+      }
+    }
+
+    // Success rate filter
+    if (minSuccess) {
+      const rowRate = parseFloat(row["Percent Success"]);
+      if (isNaN(rowRate) || rowRate < minSuccess) {
+        match = false;
+      }
+    }
 
     // Percent Public Land filter
-  if (minPL){
-    const rowpublic = parseFloat(row["Percent Public Land"]);
-    if (isNaN(rowpublic) || rowpublic < minPL) {
-      match = false;
+    if (minPL) {
+      const rowpublic = parseFloat(row["Percent Public Land"]);
+      if (isNaN(rowpublic) || rowpublic < minPL) {
+        match = false;
+      }
     }
+
+    return match;
   }
-
-  return match;
-}
-
 
   // ---------- gather filter input state once for draw table ----------
   if (drawTable) {
@@ -375,7 +475,8 @@ function applyFilters(data) {
       ploSelect: Array.from(document.querySelectorAll('input[name="plo"]:checked')).map(cb => cb.value),
       rfwSelect: Array.from(document.querySelectorAll('input[name="rfw"]:checked')).map(cb => cb.value),
       seasonSelect: Array.from(document.querySelectorAll('input[name="season"]:checked')).map(cb => cb.value),
-      ppLimit: parseInt(document.getElementById("PPSlide")?.value, 10) || Infinity,
+      ppLimit: parseInt(document.getElementById("PPSlide")?.value, 10),
+      ppmin: parseInt(document.getElementById("ppmin")?.value, 10),
       noappsSelect: Array.from(document.querySelectorAll('input[name="noapps"]:checked')).map(cb => cb.value)
     };
 
@@ -391,20 +492,70 @@ function applyFilters(data) {
   return data;
 }
 
-//Laod unit attributes 
-let unitAttributes = {};
 
-Papa.parse("DeerHarvest25.csv", {
+
+
+Papa.parse("DeerHarvest25.csv", { 
   download: true,
   header: true,
   skipEmptyLines: true,
   complete: function(results) {
+    // Build attributes map
     results.data.forEach(row => {
       const unit = row.harvestunit;
       if (unit) unitAttributes[unit] = row;
     });
+
+    // 🔧 Percentile cutoff (e.g., 0.05 = 5%)
+    const PERCENTILE_CLIP = 0.1;  
+
+    // Which CSV headers should we compute ranges for?
+    const targetCols = [
+      "Hunters Density Per Sq. Mile",
+      "Hunters Density Per Public Sq. Mile",
+      "percent_public"
+      // add more column header names here if you want them colored
+    ];
+
+    targetCols.forEach(col => {
+      // extract numeric values, cleaning commas, percent signs, whitespace, etc.
+      const values = results.data
+        .map(r => {
+          const raw = String(r[col] ?? "").trim();
+          const cleaned = raw.replace(/[,()%\s]/g, "").replace(/[^\d.\-]/g, "");
+          const n = parseFloat(cleaned);
+          return isNaN(n) ? null : n;
+        })
+        .filter(v => v !== null)
+        .sort((a, b) => a - b); // sort ascending for percentiles
+
+      if (values.length === 0) {
+        console.warn(`colorize: no numeric values found for column "${col}"`);
+        return;
+      }
+
+      const n = values.length;
+      const lowIndex = Math.floor(n * PERCENTILE_CLIP);
+      const highIndex = Math.floor(n * (1 - PERCENTILE_CLIP));
+
+      const minClipped = values[lowIndex];
+      const maxClipped = values[highIndex];
+
+      globalRanges[col] = {
+        min: minClipped,
+        max: maxClipped,
+        values: values // store all numeric values for percentile scaling
+      };
+
+      console.info(`colorize: globalRanges[${col}] =`, globalRanges[col]);
+    });
+  },
+  error: function(err) {
+    console.error("Error parsing DeerHarvest25.csv for color ranges:", err);
   }
 });
+
+
 
 
 
@@ -495,7 +646,8 @@ function initTable({ tableId, csvFile, columns, headers }) {
       // ---------- Draw Table Filters ----------
       if (tableId === "itemTable") {
         const ppInput = document.getElementById("PPSlide");
-        const ppValDisplay = document.getElementById("PPVal");
+        const ppValDisplay = document.getElementById("PPSlide");
+        const ppmin = document.getElementById("ppmin");
 
         if (ppInput) {
           ppInput.addEventListener("input", () => {
@@ -505,6 +657,15 @@ function initTable({ tableId, csvFile, columns, headers }) {
             renderFn(applyFilters(parsedData), currentPage);
           });
         }
+
+        if (ppmin) {
+          ppmin.addEventListener("input", () => {
+            currentPage = 1;
+            renderFn(applyFilters(parsedData), currentPage);
+          });
+        }
+
+
 
         const filters = ["specunit", "sex", "class", "plo", "rfw", "season", "noapps"];
         filters.forEach(id => {

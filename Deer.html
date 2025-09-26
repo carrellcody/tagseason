@@ -36,22 +36,24 @@
 
       <!-- Range slider for Preperence points -->
     <label for="PPSlide" style="display: flex; align-items: center; gap: 10px;", class = "filter-row">
-        <div class="filter-header">Current preference points for Deer (Max points required)</div>
-        <input type="number" id="PPSlide" value="35" step="1"> 
-        <span id="PPVal">35</span>       
+        <div class="filter-header">Current preference points for Deer (Any tags requiring more will be filtered out)</div>
+        <input type="number" id="PPSlide" value="35" step="1">       
     </label>
+
+          <!-- Range slider for Preperence points -->
+    <label for="ppmin" style="display: flex; align-items: center; gap: 10px;", class = "filter-row">
+        <div class="filter-header">Minimum points required (Tags requiring less than this will be filtered out)</div>
+        <input type="number" id="ppmin" value="0" step="1"> 
+           
+    </label>
+
 
 
         <!-- <input type="number" id="minpp" placeholder="Min Prefence Points Required">
         <input type="number" id="maxpp" placeholder="Max Prefence Points Required"> -->
 
 
-    <div id="noapps" style="display: flex; align-items: center; gap: 10px;", class = "filter-row">
-        <div class="filter-header">Show tags with no applicants and/or no successful applicants?:</div>
-          <label><input type="radio" name="noapps" value="Yes"><span>Yes</span></label>
-          <label><input type="radio" name="noapps" value="No"checked><span>No</span></label>
-      </div>
-   
+ 
     
       
       <!-- Push buttons for weapons 
@@ -114,11 +116,23 @@
         <div class="filter-header">Search for specific units:</div>
         <input type="text" id="specunit" placeholder="Separate units by commas to look for multiple">
       </div>
-      
+
+       <div id="noapps" style="display: flex; align-items: center; gap: 10px;", class = "filter-row">
+        <div class="filter-header">Show tags with no applicants and/or no successful applicants?:</div>
+          <label><input type="radio" name="noapps" value="Yes"><span>Yes</span></label>
+          <label><input type="radio" name="noapps" value="No"checked><span>No</span></label>
+      </div>
+
+
+
+
       <!---Number of tags matching criteria-->
         <p id="rowCount"></p>
   </div> 
 
+
+  
+   
   <div class="table-container">
       <!-- Table -->
       <table id="itemTable">
@@ -137,5 +151,9 @@
 <!-- PapaParse: library to handle CSV -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="script.js" defer></script>
+  <!-- your HTML page ... -->
+
+
 </body>
 </html>
+
