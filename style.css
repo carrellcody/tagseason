@@ -1,6 +1,14 @@
+.layout {
+  display: flex;
+  height: calc(100vh - 70px); /* full height below the fixed header */
+  overflow: hidden;           /* prevent the whole page from scrolling */
+}
+
+
 body {
   font-family: Arial, sans-serif;
-  margin: 20px;
+  margin: 0;                    /* remove the old 20px margin */
+  padding-top: 70px;            /* same as header height */
 }
 
 table {
@@ -28,31 +36,28 @@ input {
 }
 
 
-.layout {
-  display: flex;
-  align-items: flex-start;
-}
+
 
 /* Sidebar filters */
 .filterinputs {
-  position: sticky;   /* freezes on scroll */
-  top: 10px;          /* stays pinned under header */
-  width: 40%;
-  height: fit-content;
-  /*max-height: 100vh;    doesn’t overflow screen */
-  /*overflow-y: auto;*/
-  margin-right: 20px;
-  padding: 10px;
+  width: 40%;                  /* fixed sidebar width */
+  padding: 20px;
   border-right: 2px solid #ccc;
-  background-color: #f8f8f8;
-  font-size: 15px;
+  background: #f8f8f8;
+  box-sizing: border-box;
+  height: 100%;                  /* full height of layout */
+  overflow-y: auto;              /* own scrollbar if content is taller */
 }
 
-/* Table container takes remaining space */
+/* Table container */
 .table-container {
-  flex-grow: 1;
-  width:60%;
+  flex: 1;                       /* take remaining space */
+  height: 100%;
+  width: 60%;
+  overflow-y: auto;              /* independent scroll */
+  padding: 0;
 }
+
 /*make the class section two lines*/
 .classwrap {
 display: flex;
@@ -90,21 +95,51 @@ flex-wrap: wrap;
 
 
 #weapon label, #sex label, #class label, #plo label, #rfw label, 
-#season label, #noapps label, #harvestCheckboxes label, #extraHarvestCheckboxes label{
+#season label, #noapps label{
   display: inline-block;
   margin: 5px;
   cursor: pointer;
 }
 
 #weapon input, #sex input, #class input, #plo input, 
-#rfw input, #season input, #noapps input, #harvestCheckboxes input, 
-#extraHarvestCheckboxes input{
+#rfw input, #season input, #noapps input{
   display: none; /* hide actual checkbox */
 }
 
+
+#harvestCheckboxes,
+#extraHarvestCheckboxes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* exactly 2 equal columns */
+  gap: 6px 12px;
+  align-items: start;  /* ensures checkboxes and labels align at the top */
+  width: 100%;
+  box-sizing: border-box;
+}
+/* Label flexbox for spacing */
+#harvestCheckboxes label,
+#extraHarvestCheckboxes label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  margin: 5px
+}
+
+
+/* Make checkboxes a normal consistent size */
+#harvestCheckboxes input[type="checkbox"],
+#extraHarvestCheckboxes input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0; /* prevents them from stretching */
+  margin: 0;
+}
+
 #weapon span, #sex span, #class span, #plo span, 
-#rfw span, #season span, #noapps span, #harvestCheckboxes span,
- #extraHarvestCheckboxes span {
+#rfw span, #season span, #noapps span{
   display: inline-block;
   padding: 8px 14px;
   border: 2px solid #333;
@@ -119,25 +154,23 @@ flex-wrap: wrap;
 #plo input:checked + span,
 #rfw input:checked + span,
 #season input:checked + span,
-#noapps input:checked + span,
-#harvestCheckboxes input:checked + span,
-#extraHarvestCheckboxes input:checked + span
+#noapps input:checked + span
 {
   background-color: #4caf50;
   color: white;
   border-color: #4caf50;
 }
 
-/* make the table headers freeze during scrolling*/
 
+
+/* Sticky table headers */
 #itemTable thead th {
   position: sticky;
-  top: 0;
-  background: white; /* or another color so it doesn’t overlap rows */
-  z-index: 2;        /* keeps headers above the table rows */
-  border-bottom: 2px solid #ccc; /* optional styling */
+  top: 0;                        /* relative to table container scroll */
+  background: white;
+  z-index: 2;
+  border-bottom: 2px solid #ccc;
 }
-
 
 
 
@@ -208,11 +241,17 @@ h2{
 }
 
 .page-header {
-    display: flex;
-    justify-content: space-between; /* title left/center, buttons right */
-    align-items: center;            /* vertical alignment */
-    margin: 20px;                   /* spacing around header */
-    position: relative;
+  position: fixed;              /* lock to top */
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70px;                 /* set an explicit height */
+  display: flex;
+  justify-content: center;      /* center title */
+  align-items: center;          /* vertical centering */
+  background: white;            /* cover content behind */
+  border-bottom: 2px solid #ccc;
+  z-index: 1000;                /* keep above filters/table */
 }
 
 .page-title {
@@ -313,4 +352,3 @@ h2{
   opacity: 0.5;
   pointer-events: none; /* prevents clicks on children (radios already disabled) */
 }
-

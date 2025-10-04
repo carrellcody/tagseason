@@ -77,6 +77,8 @@ const headerLabelsSubDraw = {
   "Hunters Density Per Public Sq. Mile":"Hunter Density Per Public Sq. Mile (x1000)"
 }
 
+
+
 // Toggle sort direction or switch column
 function toggleSort(col) {
   if (sortColumn === col) {
@@ -112,7 +114,21 @@ function sortData(data) {
   });
 }
 
-
+//layout fitting below header
+function fitLayoutBelowHeader(){
+  const header = document.querySelector('.page-header');
+  const layout = document.querySelector('.layout');
+  if(!layout) return;
+  const headerH = header ? header.getBoundingClientRect().height : 0;
+  // account for body margins (top + bottom)
+  const bodyStyle = getComputedStyle(document.body);
+  const mTop = parseFloat(bodyStyle.marginTop) || 0;
+  const mBottom = parseFloat(bodyStyle.marginBottom) || 0;
+  const available = window.innerHeight - headerH - mTop - mBottom;
+  layout.style.height = (available > 200 ? available : 200) + 'px'; // keep a small min height
+}
+window.addEventListener('load', fitLayoutBelowHeader);
+window.addEventListener('resize', fitLayoutBelowHeader);
 
 
 // Colorize multiple columns, each using its own min/max from globalRanges
@@ -422,7 +438,7 @@ function applyFilters(data) {
 
   // ---------- filters for DeerHarvest.html ----------
   function filterHarvestPage(row) {
-    const harvestCats = Array.from(document.querySelectorAll("#harvestCheckboxes input[type=checkbox]:checked"))
+    const harvestCats = Array.from(document.querySelectorAll("#harvestCheckboxContainer input[type=checkbox]:checked"))
       .map(cb => cb.value);
 
     const harvestUnit  = document.getElementById("harvestunit")?.value.trim();
@@ -457,7 +473,7 @@ function applyFilters(data) {
 
     // Percent Public Land filter
     if (minPL) {
-      const rowpublic = parseFloat(row["Percent Public Land"]);
+      const rowpublic = parseFloat(row["percent_public"]);
       if (isNaN(rowpublic) || rowpublic < minPL) {
         match = false;
       }
@@ -783,80 +799,119 @@ function initTable({ tableId, csvFile, columns, headers }) {
   const harvestInputs = ["harvestunit", "minsr", "minpl"];
 
   if (harvestCheckboxContainer) {
-    // get unique categories from CSV
-    const categories = [...new Set(parsedData.map(row => row.Category).filter(Boolean))].sort();
+  // get unique categories from CSV
+  const categories = [...new Set(parsedData.map(row => row.Category).filter(Boolean))];
 
-    // reference containers
-    const harvestBox = document.getElementById("harvestCheckboxes");
-    const extraBox = document.getElementById("extraHarvestCheckboxes");
+  // reference containers
+  const harvestBox = document.getElementById("harvestCheckboxes");
+  const extraBox = document.getElementById("extraHarvestCheckboxes");
 
-    // categories that should always be visible
-    const visibleCats = ["Any","2nd season rifle Antlered (Does not include PLO)", "3rd season rifle Antlered (Does not include PLO)", 
-      "4th  season rifle Antlered (Does not include PLO)", "All Archery Seasons", "All Muzzleloader Seasons"];
+  // categories that should always be visible
+  const visibleCats = [
+    "All manners of take",
+    "2nd season rifle Antlered (Does not include PLO)",
+    "3rd season rifle Antlered (Does not include PLO)",
+    "4th  season rifle Antlered (Does not include PLO)",
+    "All Archery Seasons",
+    "Either Sex Muzzleloader"
+  ];
 
-    // inject "Any" + categories
-    ["Any", ...categories].forEach(cat => {
-      const label = document.createElement("label");
+  // custom order comes first
+  const customOrder = [
+    "All manners of take",
+    "All Archery Seasons",
+    "Either Sex Muzzleloader",
+    "2nd season rifle Antlered (Does not include PLO)",
+    "3rd season rifle Antlered (Does not include PLO)",
+    "4th  season rifle Antlered (Does not include PLO)"
+  ];
 
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.value = cat;
+  // categories not in custom order
+  const remainingCats = categories.filter(c => !customOrder.includes(c)).sort();
 
-      // make "Any" checked by default
-      if (cat === "Any") input.checked = true;
+  // final ordered list (without "Any")
+  const orderedCats = [...customOrder, ...remainingCats];
 
-      const span = document.createElement("span");
-      span.textContent = cat;
+  // inject main categories
+  orderedCats.forEach(cat => {
+    const label = document.createElement("label");
 
-      label.appendChild(input);
-      label.appendChild(span);
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = cat;
 
-      if (visibleCats.includes(cat)) {
-        harvestBox.appendChild(label);
-      } else {
-        extraBox.appendChild(label);
-      }
-    });
+    // make "All manners of take" checked by default
+    if (cat === "All manners of take") input.checked = true;
 
-    // Hide "More…" button if no extras
-    if (extraBox.children.length === 0) {
-      const toggleBtn = document.getElementById("toggleExtraCats");
-      if (toggleBtn) toggleBtn.style.display = "none";
+    const span = document.createElement("span");
+    span.textContent = cat;
+
+    label.appendChild(input);
+    label.appendChild(span);
+
+    if (visibleCats.includes(cat)) {
+      harvestBox.appendChild(label);
+    } else {
+      extraBox.appendChild(label);
     }
+  });
 
-    // Checkbox change logic
-    harvestCheckboxContainer.addEventListener("change", e => {
-      const target = e.target;
-      if (target.tagName === "INPUT" && target.type === "checkbox") {
-        if (target.value === "Any" && target.checked) {
-          // If "Any" is checked, uncheck everything else
-          harvestCheckboxContainer.querySelectorAll("input[type=checkbox]").forEach(cb => {
-            if (cb.value !== "Any") cb.checked = false;
-          });
-          extraBox.querySelectorAll("input[type=checkbox]").forEach(cb => {
-            cb.checked = false;
-          });
-        } else if (target.value !== "Any" && target.checked) {
-          // If a real category is checked, uncheck "Any"
-          const anyBox = harvestCheckboxContainer.querySelector("input[value=Any]");
-          if (anyBox) anyBox.checked = false;
-        }
-        currentPage = 1;
-        renderFn(applyFilters(parsedData), currentPage);
-      }
-    });
+  // now add "Any" at the very bottom of the extraBox
+  const anyLabel = document.createElement("label");
+  const anyInput = document.createElement("input");
+  anyInput.type = "checkbox";
+  anyInput.value = "Any";
 
-    // Also listen for changes inside extra checkboxes
-    extraBox.addEventListener("change", e => {
-      const target = e.target;
-      if (target.tagName === "INPUT" && target.type === "checkbox") {
-        const anyBox = harvestCheckboxContainer.querySelector("input[value=Any]");
-        if (anyBox && target.checked) anyBox.checked = false;
-        currentPage = 1;
-        renderFn(applyFilters(parsedData), currentPage);
-      }
-    });
+  const anySpan = document.createElement("span");
+  anySpan.textContent = "Any";
+
+  anyLabel.appendChild(anyInput);
+  anyLabel.appendChild(anySpan);
+  extraBox.appendChild(anyLabel);
+
+  // Hide "More…" button if no extras (besides Any)
+  if (extraBox.children.length === 1) {
+    const toggleBtn = document.getElementById("toggleExtraCats");
+    if (toggleBtn) toggleBtn.style.display = "none";
   }
+
+  // Checkbox change logic
+  harvestCheckboxContainer.addEventListener("change", e => {
+    const target = e.target;
+    if (target.tagName === "INPUT" && target.type === "checkbox") {
+      if (target.value === "Any" && target.checked) {
+        // If "Any" is checked, uncheck everything else
+        harvestCheckboxContainer.querySelectorAll("input[type=checkbox]").forEach(cb => {
+          if (cb.value !== "Any") cb.checked = false;
+        });
+        extraBox.querySelectorAll("input[type=checkbox]").forEach(cb => {
+          if (cb.value !== "Any") cb.checked = false;
+        });
+      } else if (target.value !== "Any" && target.checked) {
+        // If a real category is checked, uncheck "Any"
+        const anyBox = extraBox.querySelector("input[value=Any]");
+        if (anyBox) anyBox.checked = false;
+      }
+      currentPage = 1;
+      renderFn(applyFilters(parsedData), currentPage);
+    }
+  });
+
+  // Also listen for changes inside extra checkboxes
+  extraBox.addEventListener("change", e => {
+    const target = e.target;
+    if (target.tagName === "INPUT" && target.type === "checkbox") {
+      if (target.value !== "Any" && target.checked) {
+        const anyBox = extraBox.querySelector("input[value=Any]");
+        if (anyBox) anyBox.checked = false;
+      }
+      currentPage = 1;
+      renderFn(applyFilters(parsedData), currentPage);
+    }
+  });
+}
+
+
 
   // wire up other harvest inputs
   harvestInputs.forEach(id => {
@@ -876,7 +931,7 @@ if (toggleBtn) {
   toggleBtn.addEventListener("click", () => {
     const extraBox = document.getElementById("extraHarvestCheckboxes");
     if (extraBox.style.display === "none") {
-      extraBox.style.display = "block";
+      extraBox.style.display = "grid";
       toggleBtn.textContent = "Less...";
     } else {
       extraBox.style.display = "none";
