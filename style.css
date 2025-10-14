@@ -19,7 +19,7 @@ table {
 th, td {
   border: 1px solid #ddd;
   padding: 8px;
-  positions: sticky;
+  position:sticky;
 }
 
 tr:nth-child(even) {
@@ -69,7 +69,11 @@ flex-wrap: wrap;
 #itemTable td:nth-child(2),
 #itemTable th:nth-child(2),
 #itemTable td:nth-child(9),
-#itemTable th:nth-child(9) {
+#itemTable th:nth-child(9),
+#elkitemtable td:nth-child(2),
+#elkitemtable th:nth-child(2),
+#elkitemtable td:nth-child(9),
+#elkitemtable th:nth-child(9)  {
   max-width: 120px;
   white-space: normal; /* allow wrapping */
   word-wrap: break-word;
@@ -79,14 +83,20 @@ flex-wrap: wrap;
 #itemTable td:nth-child(6),
 #itemTable th:nth-child(6),
 #itemTable td:nth-child(7),
-#itemTable th:nth-child(7) {
+#itemTable th:nth-child(7),
+#elkitemtable td:nth-child(6),
+#elkitemtable th:nth-child(6),
+#elkitemtable td:nth-child(7),
+#elkitemtable th:nth-child(7)  {
   max-width: 40px;
   min-width:40px;
   white-space: normal; /* allow wrapping */
   word-wrap: break-word;
 }
 
-#itemTable td:nth-child(8) {
+#itemTable td:nth-child(8),
+#elkitemtable td:nth-child(8)
+{
   max-width: 150px;
   white-space: nowrap;
   overflow: hidden;
@@ -165,7 +175,8 @@ flex-wrap: wrap;
 
 
 /* Sticky table headers */
-#itemTable thead th {
+#itemTable thead th,
+#elkitemtable thead th {
   position: sticky;
   top: 0;                        /* relative to table container scroll */
   background: white;
@@ -334,14 +345,18 @@ h2{
 }
 
 #itemTable .subtable th:nth-child(6),
-#itemTable .subtable td:nth-child(6)
+#itemTable .subtable td:nth-child(6),
+#elkitemtable .subtable th:nth-child(6),
+#elkitemtable .subtable td:nth-child(6)
  {
   width: 300px;
   max-width: 300px  ;   /* or whatever width you want */
   white-space: normal; /* allow wrapping instead of squishing */
 }
 #itemTable .subtable th:nth-child(7),
-#itemTable .subtable td:nth-child(7)
+#itemTable .subtable td:nth-child(7),
+#elkitemtable .subtable th:nth-child(7),
+#elkitemtable .subtable th:nth-child(7)
  {
   width: 100px;
   max-width: 100px  ;   /* or whatever width you want */
@@ -353,4 +368,3 @@ h2{
   opacity: 0.5;
   pointer-events: none; /* prevents clicks on children (radios already disabled) */
 }
-
