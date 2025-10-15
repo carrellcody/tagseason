@@ -82,20 +82,24 @@ const headerLabelsHarvestDeer = {
   "Total Rec. Days" : "Total Rec Days"
   ,"percent_public" : "Public Land %",
   "Acres" : "Total Acres",
-  "Acres Public" : "Public Acres"
+  "Acres Public" : "Public Acres",
+  "Hunters Density Per Sq. Mile": "Hunters per square mile",
+  "Hunters Density Per Public Sq. Mile" : "Hunters per public square mile"
 };
 const headerLabelsHarvestElk = {
   "Unit": "Unit",
   "Category": "Harvest Category",
   "Bulls":"Bulls Killed",	
-  "Total Antlerless Harvest" : "Cows/Calves Killed",
+  "Total Antlerless Harvest" : "Cows or Calves Killed",
   "Total Harvest" : "Total Harvest",
   "Total Hunters" : "Total Hunters",
   "Percent Success" :"Success Rate",
   "Total Rec. Days" : "Total Rec Days"
   ,"percent_public" : "Public Land %",
   "Acres" : "Total Acres",
-  "Acres Public" : "Public Acres"
+  "Acres Public" : "Public Acres",
+  "Hunters Density Per Sq. Mile": "Hunters per square mile",
+  "Hunters Density Per Public Sq. Mile" : "Hunters per public square mile"
 };
 
 
@@ -928,7 +932,7 @@ function initTable({ tableId, csvFile, columns, headers }) {
       }
 
       // ---------- Harvest Table Filters ----------
-      if (tableId === "deerharvesttable"|| "elkharvesttable") {
+      if (tableId === "deerharvesttable"|| tableId == "elkharvesttable") {
   const harvestCheckboxContainer = document.getElementById("harvestCheckboxes");
   const harvestInputs = ["harvestunit", "minsr", "minpl"];
 
@@ -939,9 +943,13 @@ function initTable({ tableId, csvFile, columns, headers }) {
   // reference containers
   const harvestBox = document.getElementById("harvestCheckboxes");
   const extraBox = document.getElementById("extraHarvestCheckboxes");
+  
+  let visibleCats = [];
+  let customOrder = [];
 
   // categories that should always be visible
-  const visibleCats = [
+  if (tableId === "deerharvesttable") {
+  visibleCats = [
     "All manners of take",
     "2nd season rifle Antlered (Does not include PLO)",
     "3rd season rifle Antlered (Does not include PLO)",
@@ -952,9 +960,8 @@ function initTable({ tableId, csvFile, columns, headers }) {
   ];
 
   // custom order comes first
-  const customOrder = [
+  customOrder = [
     "All manners of take",
-    "Either Sex Muzzleloader",
     "2nd season rifle Antlered (Does not include PLO)",
     "3rd season rifle Antlered (Does not include PLO)",
     "4th  season rifle Antlered (Does not include PLO)",
@@ -962,7 +969,30 @@ function initTable({ tableId, csvFile, columns, headers }) {
     "Antlerless Muzzleloader",
     "All Archery Seasons"
   ];
+  }
 
+  if (tableId === "elkharvesttable") {
+  visibleCats = [
+    "All manners of take",
+    "Antlered Second Rifle Seasons (No PLO or Either-sex tags included)",
+    "Antlered Third Rifle Seasons (No PLO or Either-sex tags included)",
+    "Antlered Fourth Rifle Seasons (No PLO or Either-sex tags included)",
+    "All Archery Seasons",
+    "Antlered Muzzleloader",
+    "Antlerless Muzzleloader"
+  ];
+  
+  // custom order comes first
+  customOrder = [
+    "All manners of take",
+    "Antlered Second Rifle Seasons (No PLO or Either-sex tags included)",
+    "Antlered Third Rifle Seasons (No PLO or Either-sex tags included)",
+    "Antlered Fourth Rifle Seasons (No PLO or Either-sex tags included)",
+    "All Archery Seasons",
+    "Antlered Muzzleloader",
+    "Antlerless Muzzleloader"
+  ];
+  }
   // categories not in custom order
   const remainingCats = categories.filter(c => !customOrder.includes(c)).sort();
 
@@ -1112,7 +1142,7 @@ if (toggleBtn) {
 // ------------------------------
 // Load ELK Harvest data for unit attributes & color ranges
 // ------------------------------
-Papa.parse("ElkHarvest25.csv", {
+Papa.parse("elkHarvest25.csv", {
   download: true,
   header: true,
   dynamicTyping: false,
@@ -1154,7 +1184,7 @@ Papa.parse("ElkHarvest25.csv", {
     });
   },
   error: function(err) {
-    console.error("Error parsing ElkHarvest25.csv:", err);
+    console.error("Error parsing elkHarvest25.csv:", err);
   }
 });
 
@@ -1187,6 +1217,7 @@ function toggleCheckboxes() {
 
 // Load the right CSV based on the page
 document.addEventListener("DOMContentLoaded", () => {
+  
   if (document.body.classList.contains("deerdraw")) {
     initTable({
       tableId: "itemTable",
@@ -1199,7 +1230,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (document.body.classList.contains("deerharvest")) {
     initTable({
       tableId: "deerharvesttable",
-      csvFile: "ElkHarvest25.csv",
+      csvFile: "DeerHarvest25.csv",
       columns: visibleColumnsHarvestDeer,
       headers: headerLabelsHarvestDeer
     });
@@ -1223,4 +1254,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-

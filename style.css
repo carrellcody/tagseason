@@ -176,7 +176,10 @@ flex-wrap: wrap;
 
 /* Sticky table headers */
 #itemTable thead th,
-#elkitemtable thead th {
+#elkitemtable thead th,
+#deerharvesttable thead th,
+#elkharvesttable thead th {
+
   position: sticky;
   top: 0;                        /* relative to table container scroll */
   background: white;
@@ -362,6 +365,36 @@ h2{
   max-width: 100px  ;   /* or whatever width you want */
   white-space: normal; /* allow wrapping instead of squishing */
 }
+
+#deerharvesttable,
+#elkharvesttable {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Widen the second column (use nth-child(2), not 1, for column #2) */
+#deerharvesttable th:nth-child(2),
+#deerharvesttable td:nth-child(2),
+#elkharvesttable th:nth-child(2),
+#elkharvesttable td:nth-child(2) {
+  width: 200px;
+  max-width: 700px;
+  white-space: normal; /* allow text wrapping */
+  word-wrap: break-word;
+}
+
+
+/* Make the filter panel narrower and the table wider only on harvest pages */
+body.deerharvest .filterinputs,
+body.elkharvest .filterinputs {
+  width: 30%;   /* was 40% */
+}
+
+body.deerharvest .table-container,
+body.elkharvest .table-container {
+  width: 70%;   /* was 60% */
+}
+
 
 /* visually greyed-out controls for disabled buttons (e.g. RFW) */
 .control-disabled {
