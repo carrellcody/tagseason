@@ -242,175 +242,134 @@ function colorizeColumns(table, colHeaderMap) {
 function renderDrawTable(
   data,
   page = 1,
-  columns = visibleColumnsDrawDeer,
-  tableEl = document.getElementById("itemTable")
+  columns,
+  tableEl,
+  pdfUrl,
+  huntCodeMap
 ) {
   const body = tableEl.querySelector("tbody");
   body.innerHTML = "";
 
-  // Apply sorting before paginating
   const sortedData = sortData(data);
   const start = (page - 1) * rowsPerPage;
   const end = start + rowsPerPage;
   const rowsToShow = sortedData.slice(start, end);
 
-  // Add links to the tag column to take you to the correct pdf
-  const pdfUrl = encodeURIComponent(
-    "https://cpw.widen.net/s/fm5zxrbhwz/postdrawrecapreport_deer-25_05102025_1540.pdf"
-  );
   const pdfjsViewer = "https://mozilla.github.io/pdf.js/web/viewer.html";
+  const longTextCols = ["Notes"];
+  const isElk = tableEl.id === "elkitemtable";
 
-  // Define which columns should be truncated
-  const longTextCols = ["Notes"]; 
-
-  // Create a fragment to batch DOM updates
   const fragment = document.createDocumentFragment();
   rowsToShow.forEach(row => {
-  const tr = document.createElement("tr");
+    const tr = document.createElement("tr");
 
-  columns.forEach(col => {
-    const td = document.createElement("td");
-
-    // Step 3: add arrow indicator only for the first column
-    if (col === "Tag") {
-      const expandIcon = document.createElement("span");
-      expandIcon.textContent = "▶"; // collapsed
-      expandIcon.style.marginRight = "6px";
-      td.appendChild(expandIcon);
-    }
-
-    // existing td population logic
-    if (col === "Tag") {
-      const code = row[col];
-      const pageNum = huntCodeMap[code];
-      if (pageNum) {
-        const a = document.createElement("a");
-        a.href = `${pdfjsViewer}?file=${pdfUrl}#page=${pageNum}`;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.title = "Click to see full draw stats for this tag";
-        a.textContent = code;
-        td.appendChild(a);
-      } else {
-        td.appendChild(document.createTextNode(code ?? ""));
-      }
-    } else if (longTextCols.includes(col)) {
-      const text = row[col] ?? "";
-      td.textContent = text;
-      td.title = text;
-      td.classList.add("longtext");
-    } else {
-      td.textContent = row[col] ?? "";
-    }
-
-    tr.appendChild(td);
-  });
-
-  // add click handler for expanding/collapsing sub-table
-  tr.addEventListener("click", () => {
-    const nextRow = tr.nextSibling;
-    const firstTd = tr.querySelector("td span"); // the arrow span
-    console.log("▶️ Expanding draw row for:", row.harvestunit);
-
-    if (nextRow && nextRow.classList.contains("subrow")) {
-      nextRow.remove();
-      if (firstTd) firstTd.textContent = "▶"; // collapsed
-    } else {
-      if (firstTd) firstTd.textContent = "▼"; // expanded
-
-      // create sub-table for units (same logic as before)
-      const subTr = document.createElement("tr");
-      subTr.classList.add("subrow");
-      const subTd = document.createElement("td");
-      subTd.colSpan = columns.length;
-      subTd.style.padding = "8px 0";
-      subTd.style.backgroundColor = "#f9f9f9";
-
-      const subTable = document.createElement("table");
-      subTable.classList.add("subtable");
-
-      // create header
-      const headerRow = document.createElement("tr");
-      const isElk = tableEl.id === "elkitemtable";
-      const harvestMap = isElk ? elkUnitAttributes : deerUnitAttributes;
-      const visibleCols = isElk ? visibleColsSubDrawTableelk : visibleColsSubDrawTable;
-      const headerLabels = isElk ? headerLabelsSubDrawelk : headerLabelsSubDraw;
-
-      visibleCols.forEach(vc => {
-        const th = document.createElement("th");
-        th.textContent = headerLabels[vc] || vc;
-        headerRow.appendChild(th);
-      });
-      subTable.appendChild(headerRow);
-
-// extract GMUs from the main draw table row
-const harvestUnits = String(row.harvestunit || "")
-  .split(",")
-  .map(u => u.trim())
-  .filter(u => u !== "");
-
-
-
-harvestUnits.forEach(unitKey => {
-  const harvestRow = harvestMap[unitKey];
-  if (harvestRow) {
-    const dataRow = document.createElement("tr");
-
-    const visibleCols = isElk ? visibleColsSubDrawTableelk : visibleColsSubDrawTable;
-
-    visibleCols.forEach(uc => {
+    columns.forEach(col => {
       const td = document.createElement("td");
-      if (uc === "Unit") {
-        const unitName = harvestMap[unitKey][uc] ?? "";
-        const url = harvestMap[unitKey]["onx"];
-        if (unitName && url) {
-          td.innerHTML = `<a href="${url}" target="_blank">${unitName}</a>`;
-        } else {
-          td.textContent = unitName;
-        }
-      } else {
-        td.textContent = harvestMap[unitKey][uc] ?? "";
+
+      // Arrow icon
+      if (col === "Tag") {
+        const expandIcon = document.createElement("span");
+        expandIcon.textContent = "▶";
+        expandIcon.style.marginRight = "6px";
+        td.appendChild(expandIcon);
       }
-      dataRow.appendChild(td);
+
+      // Hunt code link
+      if (col === "Tag") {
+        const code = row[col];
+        const pageNum = huntCodeMap[code];
+        if (pageNum) {
+          const a = document.createElement("a");
+          a.href = `${pdfjsViewer}?file=${pdfUrl}.pdf#page=${pageNum}`;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.title = "Click to see full draw stats";
+          a.textContent = code;
+          td.appendChild(a);
+        } else {
+          td.appendChild(document.createTextNode(code ?? ""));
+        }
+      } else if (longTextCols.includes(col)) {
+        td.textContent = row[col] ?? "";
+        td.title = row[col];
+        td.classList.add("longtext");
+      } else {
+        td.textContent = row[col] ?? "";
+      }
+
+      tr.appendChild(td);
     });
 
-    subTable.appendChild(dataRow);
-  }
-});
+    // 🧩 Expandable subtable logic — SAME as before
+    tr.addEventListener("click", () => {
+      const nextRow = tr.nextSibling;
+      const firstTd = tr.querySelector("td span");
 
+      if (nextRow && nextRow.classList.contains("subrow")) {
+        nextRow.remove();
+        if (firstTd) firstTd.textContent = "▶";
+      } else {
+        if (firstTd) firstTd.textContent = "▼";
 
+        const subTr = document.createElement("tr");
+        subTr.classList.add("subrow");
+        const subTd = document.createElement("td");
+        subTd.colSpan = columns.length;
+        subTd.style.padding = "8px 0";
+        subTd.style.backgroundColor = "#f9f9f9";
+
+        const subTable = document.createElement("table");
+        subTable.classList.add("subtable");
+
+        const headerRow = document.createElement("tr");
+        const harvestMap = isElk ? elkUnitAttributes : deerUnitAttributes;
+        const visibleCols = isElk ? visibleColsSubDrawTableelk : visibleColsSubDrawTable;
+        const headerLabels = isElk ? headerLabelsSubDrawelk : headerLabelsSubDraw;
+
+        visibleCols.forEach(vc => {
+          const th = document.createElement("th");
+          th.textContent = headerLabels[vc] || vc;
+          headerRow.appendChild(th);
+        });
+        subTable.appendChild(headerRow);
+
+        const harvestUnits = String(row.harvestunit || "")
+          .split(",")
+          .map(u => u.trim())
+          .filter(Boolean);
+
+        harvestUnits.forEach(unitKey => {
+          const harvestRow = harvestMap[unitKey];
+          if (harvestRow) {
+            const dataRow = document.createElement("tr");
+            visibleCols.forEach(uc => {
+              const td = document.createElement("td");
+              if (uc === "Unit") {
+                const unitName = harvestMap[unitKey][uc] ?? "";
+                const url = harvestMap[unitKey]["onx"];
+                if (unitName && url) {
+                  td.innerHTML = `<a href="${url}" target="_blank">${unitName}</a>`;
+                } else {
+                  td.textContent = unitName;
+                }
+              } else {
+                td.textContent = harvestMap[unitKey][uc] ?? "";
+              }
+              dataRow.appendChild(td);
+            });
+            subTable.appendChild(dataRow);
+          }
+        });
 
         subTd.appendChild(subTable);
         subTr.appendChild(subTd);
         tr.parentNode.insertBefore(subTr, tr.nextSibling);
-
-        // colorize just this subtable
-        const colMap = {
-          8: "percent_public",
-          9: "Hunters Density Per Sq. Mile",
-         10: "Hunters Density Per Public Sq. Mile",
-          };
-
-
-
-    Object.entries(colMap).forEach(([colIndex, headerName]) => {
-  colorizeColumns(subTable, {
-  9: {name: "Hunters Density Per Sq. Mile", reverse: true},
-  10: {name: "Hunters Density Per Public Sq. Mile", reverse: true},
-  8: {name: "percent_public", reverse: false}
+      }
     });
 
-});
-
-    }
+    fragment.appendChild(tr);
   });
 
-
-  fragment.appendChild(tr);
-});
-
-
-  // Append all rows in one operation
   body.appendChild(fragment);
 
   // Pagination info
@@ -418,9 +377,30 @@ harvestUnits.forEach(unitKey => {
   const pageInfoEl = document.getElementById("pageInfo");
   if (pageInfoEl) pageInfoEl.textContent = `Page ${page} of ${pageCount}`;
 
-  // Update row count
   const rowCountEl = document.getElementById("rowCount");
   if (rowCountEl) rowCountEl.textContent = `${data.length} tags match your criteria`;
+}
+
+function renderDeerDrawTable(data, page = 1) {
+  renderDrawTable(
+    data,
+    page,
+    visibleColumnsDrawDeer,
+    document.getElementById("itemTable"),
+    "https://cpw.widen.net/s/fm5zxrbhwz/postdrawrecapreport_deer-25_05102025_1540",
+    huntCodeMap
+  );
+}
+
+function renderElkDrawTable(data, page = 1) {
+  renderDrawTable(
+    data,
+    page,
+    visibleColumnsDrawElk,
+    document.getElementById("elkitemtable"),
+    "https://cpw.widen.net/s/p2hln8gpxf/postdrawrecapreport_elk-25_05172025_0612",
+    elkHuntCodeMap
+  );
 }
 
 
@@ -463,15 +443,8 @@ function renderHarvestTable(data, page = 1) {
 
 }
 
-// --- Render ELK Draw Table ---
-function renderElkDrawTable(
-  data,
-  page = 1,
-  columns = visibleColumnsDrawElk,
-  tableEl = document.getElementById("elkitemtable")
-) {
-  renderDrawTable(data, page, columns, tableEl);
-}
+
+
 
 // --- Render ELK Harvest Table ---
 function renderElkHarvestTable(data, page = 1) {
@@ -730,14 +703,15 @@ Papa.parse("deer25code_pages.csv", {
 });
 
 // Load Data table
-function initTable({ tableId, csvFile, columns, headers }) {
+function initTable({ tableId, csvFile, columns, headers, renderFunction }) {
   const tableEl = document.getElementById(tableId);
   if (!tableEl) return; // page doesn't have this table
+  let renderFn = renderFunction; // ✅ allow custom renderer if provided
 
-    let renderFn;
+    renderFn;
     switch (tableId) {
       case "itemTable":
-        renderFn = renderDrawTable;
+        renderFn = renderDeerDrawTable;
         break;
       case "elkitemtable":
         renderFn = renderElkDrawTable;
@@ -1223,7 +1197,8 @@ document.addEventListener("DOMContentLoaded", () => {
       tableId: "itemTable",
       csvFile: "FullDeer25Final.csv",
       columns: visibleColumnsDrawDeer,
-      headers: headerLabelsDrawDeer
+      headers: headerLabelsDrawDeer,
+      renderFunction: renderDeerDrawTable
     });
   }
 
@@ -1241,7 +1216,8 @@ document.addEventListener("DOMContentLoaded", () => {
       tableId: "elkitemtable",
       csvFile: "Fullelk25Final.csv",
       columns: visibleColumnsDrawElk,
-      headers: headerLabelsDrawElk
+      headers: headerLabelsDrawElk,
+      renderFunction: renderElkDrawTable
     });
   }
 
