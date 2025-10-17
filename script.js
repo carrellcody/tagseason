@@ -15,6 +15,7 @@ let globalMax = null;
 // Load unit attributes and compute global numeric ranges for coloring
 let deerUnitAttributes = {};
 let elkUnitAttributes = {};
+let antUnitAttributes = {};
 
 //Define columns that are visible for the deer draw table
 const visibleColumnsDrawDeer = ["Tag", "Valid GMUs", "Drawn_out_level", "Chance_with_First_choice", "Chance_at_DOL",
@@ -28,6 +29,9 @@ const visibleColumnsDrawElk = ["Tag", "Valid GMUs", "Drawn_out_level", "Chance_w
 const visibleColsSubDrawTable = ["Unit", "Bucks", "Antlerless", "Total Hunters","Percent Success","Category","Acres",
   "Acres Public", "percent_public", "Hunters Density Per Sq. Mile","Hunters Density Per Public Sq. Mile"]; 
 
+const visibleColsSubDrawTableant = ["Unit", "Bucks", "Antlerless", "Total Hunters","Percent Success","Category","Acres",
+  "Acres Public", "percent_public", "Hunters Density Per Sq. Mile","Hunters Density Per Public Sq. Mile"]; 
+
 //Define columns that are visible for the subtable in the draw results
 const visibleColsSubDrawTableelk = ["Unit", "Bulls", "Antlerless", "Total Hunters","Percent Success","Category","Acres",
   "Acres Public", "percent_public", "Hunters Density Per Sq. Mile","Hunters Density Per Public Sq. Mile"]; 
@@ -39,6 +43,46 @@ const visibleColumnsHarvestDeer = ["Unit",	"Category",	"Bucks",	"Antlerless",	"T
   //Define columns that are visible for the elk harvest table
 const visibleColumnsHarvestElk = ["Unit",	"Category",	"Bulls",	"Total Antlerless Harvest",	"Total Harvest",	"Total Hunters",	
   "Percent Success",	"Total Rec. Days", "percent_public","Acres", "Acres Public","Hunters Density Per Sq. Mile","Hunters Density Per Public Sq. Mile"];
+
+const visibleColumnsDrawAnt=["Tag", "Valid GMUs", "Drawn_out_level", "Chance_with_First_choice", "Chance_at_DOL",
+  "Sex","Weapon", "Notes"
+];
+
+const visibleColumnsHarvestAnt=[
+"Unit",	"Category",	"Bucks",	"Antlerless",	"Total Harvest",	"Total Hunters",	
+  "Percent Success",	"Total Rec. Days", "percent_public","Acres", "Acres Public",
+  "Hunters Density Per Sq. Mile","Hunters Density Per Public Sq. Mile"
+];
+
+const headerLabelsDrawAnt = {"Tag": "Hunt Code",
+  "Valid GMUs": "Valid Units",
+  "Drawn_out_level": "Minimum points/level required to draw (Drawn out level)",
+  "Chance_with_First_choice": "Chance to draw with indicated prefrence points at first choice",
+  "Chance_at_DOL": "Chance at Drawn out level",
+  "Sex": "Sex",
+  "Weapon": "Weapon",
+  "Notes": "Extra Info",
+  "Total_Acres": "Total Acres Across All units",
+  "Public_Acres": "Public Acres Across All units",
+  "Public_Percent": "Percent Public Land Across All units",
+  "Notes":"Notes"
+};
+
+const headerLabelsHarvestAnt = {
+  "Unit": "Unit",
+  "Category": "Harvest Category",
+  "Bucks":"Bucks Killed",	
+  "Antlerless" : "Antlerless Killed",
+  "Total Harvest" : "Total Harvest",
+  "Total Hunters" : "Total Hunters",
+  "Percent Success" :"Success Rate",
+  "Total Rec. Days" : "Total Rec Days"
+  ,"percent_public" : "Public Land %",
+  "Acres" : "Total Acres",
+  "Acres Public" : "Public Acres",
+  "Hunters Density Per Sq. Mile": "Hunters per square mile",
+  "Hunters Density Per Public Sq. Mile" : "Hunters per public square mile"
+};
 
 // Map CSV headers to display names
 const headerLabelsDrawDeer = {
@@ -119,6 +163,20 @@ const headerLabelsSubDraw = {
 const headerLabelsSubDrawelk = {
 "Unit":"Unit",		
 "Bulls": "Bulls Killed",	
+"Antlerless": "Antlerless Killed",	
+"Total Hunters" :"Total Hunters", 	
+  "Percent Success":"Percent Success",	
+  "Category":"Harvest Statistic Category",
+  "Acres":"Acres", 
+  "Acres Public":"Public Acres",
+  "percent_public":"Percent Public Land",
+  "Hunters Density Per Sq. Mile":"Hunter Density Per Sq. Mile (x1000)",
+  "Hunters Density Per Public Sq. Mile":"Hunter Density Per Public Sq. Mile (x1000)"
+}
+
+const headerLabelsSubDrawant = {
+"Unit":"Unit",		
+"Bucks": "Bucks Killed",	
 "Antlerless": "Antlerless Killed",	
 "Total Hunters" :"Total Hunters", 	
   "Percent Success":"Percent Success",	
@@ -258,15 +316,17 @@ function renderDrawTable(
   const pdfjsViewer = "https://mozilla.github.io/pdf.js/web/viewer.html";
   const longTextCols = ["Notes"];
   const isElk = tableEl.id === "elkitemtable";
+  const isAnt = tableEl.id === "Antitemtable";
 
   const fragment = document.createDocumentFragment();
+
   rowsToShow.forEach(row => {
     const tr = document.createElement("tr");
 
     columns.forEach(col => {
       const td = document.createElement("td");
 
-      // Arrow icon
+      // ▶ dropdown icon
       if (col === "Tag") {
         const expandIcon = document.createElement("span");
         expandIcon.textContent = "▶";
@@ -274,7 +334,7 @@ function renderDrawTable(
         td.appendChild(expandIcon);
       }
 
-      // Hunt code link
+      // Link hunt code to CPW PDF
       if (col === "Tag") {
         const code = row[col];
         const pageNum = huntCodeMap[code];
@@ -300,7 +360,7 @@ function renderDrawTable(
       tr.appendChild(td);
     });
 
-    // 🧩 Expandable subtable logic — SAME as before
+    // 🧩 Expandable subtable logic
     tr.addEventListener("click", () => {
       const nextRow = tr.nextSibling;
       const firstTd = tr.querySelector("td span");
@@ -322,9 +382,23 @@ function renderDrawTable(
         subTable.classList.add("subtable");
 
         const headerRow = document.createElement("tr");
-        const harvestMap = isElk ? elkUnitAttributes : deerUnitAttributes;
-        const visibleCols = isElk ? visibleColsSubDrawTableelk : visibleColsSubDrawTable;
-        const headerLabels = isElk ? headerLabelsSubDrawelk : headerLabelsSubDraw;
+
+        // 🦌🐃 Determine species and set config
+        let harvestMap, visibleCols, headerLabels;
+
+        if (isElk) {
+          harvestMap = elkUnitAttributes;
+          visibleCols = visibleColsSubDrawTableelk;
+          headerLabels = headerLabelsSubDrawelk;
+        } else if (isAnt) {
+          harvestMap = antUnitAttributes;
+          visibleCols = visibleColsSubDrawTableant;
+          headerLabels = headerLabelsSubDrawant;
+        } else {
+          harvestMap = deerUnitAttributes;
+          visibleCols = visibleColsSubDrawTable;
+          headerLabels = headerLabelsSubDraw;
+        }
 
         visibleCols.forEach(vc => {
           const th = document.createElement("th");
@@ -380,7 +454,6 @@ function renderDrawTable(
   const rowCountEl = document.getElementById("rowCount");
   if (rowCountEl) rowCountEl.textContent = `${data.length} tags match your criteria`;
 }
-
 function renderDeerDrawTable(data, page = 1) {
   renderDrawTable(
     data,
@@ -400,6 +473,17 @@ function renderElkDrawTable(data, page = 1) {
     document.getElementById("elkitemtable"),
     "https://cpw.widen.net/s/p2hln8gpxf/postdrawrecapreport_elk-25_05172025_0612",
     elkHuntCodeMap
+  );
+}
+
+function renderAntDrawTable(data, page = 1) {
+  renderDrawTable(
+    data,
+    page,
+    visibleColumnsDrawAnt, // 👈 define your antelope visible columns
+    document.getElementById("Antitemtable"),
+    "https://cpw.widen.net/s/abcdefghi/postdrawrecapreport_antelope-25", 
+    antHuntCodeMap
   );
 }
 
@@ -483,6 +567,42 @@ function renderElkHarvestTable(data, page = 1) {
 }
 
 
+function renderAntHarvestTable(data, page = 1) {
+  const body = document.querySelector("#Antharvesttable tbody");
+  body.innerHTML = "";
+
+  const sorted = sortData(data);
+  const rows = sorted.slice((page-1)*rowsPerPage, page*rowsPerPage);
+
+  rows.forEach(row => {
+    const tr = document.createElement("tr");
+    visibleColumnsHarvestAnt.forEach(col => {
+      const td = document.createElement("td");
+
+      if (col === "Unit") {
+        const unit = row[col];
+        const url = row["onx"] || row["Map_URL"] || "";
+        if (unit && url) {
+          const a = document.createElement("a");
+          a.href = url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = unit;
+          td.appendChild(a);
+        } else {
+          td.textContent = unit ?? "";
+        }
+      } else {
+        td.textContent = row[col] ?? "";
+      }
+
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+}
+
+
 
 // Apply filters
 function applyFilters(data) {
@@ -490,6 +610,8 @@ function applyFilters(data) {
   const elkDrawTable = document.getElementById("elkitemtable");
   const harvestTable = document.getElementById("deerharvesttable");
   const elkHarvestTable = document.getElementById("elkharvesttable");
+  const antHarvestTable = document.getElementById("Antharvesttable");
+  const antDrawTable = document.getElementById("Antitemtable");
 
   // ---------- filters for any Draw page (deer, elk, etc.) ----------
   function filterDrawPage(row, filterState) {
@@ -597,7 +719,7 @@ function applyFilters(data) {
   }
 
   // ---------- gather filter input state once for draw tables ----------
-  if (deerDrawTable || elkDrawTable) {
+  if (deerDrawTable || elkDrawTable|| antDrawTable) {
     const filterState = {
       nameSearch: document.getElementById("specunit")?.value.trim() || "",
       sexSelect: Array.from(document.querySelectorAll('input[name="sex"]:checked')).map(cb => cb.value),
@@ -614,7 +736,7 @@ function applyFilters(data) {
   }
 
   // ---------- harvest table ----------
-  if (harvestTable || elkHarvestTable) {
+  if (harvestTable || elkHarvestTable || antHarvestTable) {
     return data.filter(filterHarvestPage);
   }
 
@@ -716,11 +838,17 @@ function initTable({ tableId, csvFile, columns, headers, renderFunction }) {
       case "elkitemtable":
         renderFn = renderElkDrawTable;
         break;
+      case "Antitemtable":
+        renderFn = renderAntDrawTable;
+        break;
       case "deerharvesttable":
         renderFn = renderHarvestTable;
         break;
       case "elkharvesttable":
         renderFn = renderElkHarvestTable;
+        break;
+      case "Antharvesttable":
+        renderFn = renderAntHarvestTable;
         break;
       default:
         return; // Unknown table
@@ -789,7 +917,7 @@ function initTable({ tableId, csvFile, columns, headers, renderFunction }) {
       });
 
             // ---------- Draw Table Filters ----------
-      if (tableId === "itemTable" || tableId === "elkitemtable") {
+      if (tableId === "itemTable" || tableId === "elkitemtable" || tableId === "Antitemtable") {
         const ppInput = document.getElementById("PPSlide");
         const ppValDisplay = document.getElementById("PPSlide");
         const ppmin = document.getElementById("ppmin");
@@ -906,7 +1034,7 @@ function initTable({ tableId, csvFile, columns, headers, renderFunction }) {
       }
 
       // ---------- Harvest Table Filters ----------
-      if (tableId === "deerharvesttable"|| tableId == "elkharvesttable") {
+      if (tableId === "deerharvesttable"|| tableId == "elkharvesttable" || tableId =="Antharvesttable" ) {
   const harvestCheckboxContainer = document.getElementById("harvestCheckboxes");
   const harvestInputs = ["harvestunit", "minsr", "minpl"];
 
@@ -965,6 +1093,25 @@ function initTable({ tableId, csvFile, columns, headers, renderFunction }) {
     "All Archery Seasons",
     "Antlered Muzzleloader",
     "Antlerless Muzzleloader"
+  ];
+  }
+
+  if (tableId === "Antharvesttable") {
+  visibleCats = [
+    "All manners of take",
+    "All Rifle Seasons",
+    "All Archery Seasons",
+    "All Muzzleloader Seasons",
+    "All Private Land Only Seasons",
+  ];
+  
+  // custom order comes first
+  customOrder = [
+    "All manners of take",
+    "All Rifle Seasons",
+    "All Archery Seasons",
+    "All Muzzleloader Seasons",
+    "All Private Land Only Seasons",
   ];
   }
   // categories not in custom order
@@ -1178,6 +1325,64 @@ Papa.parse("elk25code_pages.csv", {
   }
 });
 
+Papa.parse("antHarvest25.csv", {
+  download: true,
+  header: true,
+  dynamicTyping: false,
+  complete: function(results) {
+    results.data.forEach(row => {
+      const unit = String(row.harvestunit || "").trim();
+      if (unit) antUnitAttributes[unit] = row; // identical logic
+    });
+    
+    const PERCENTILE_CLIP = 0.1;
+    const targetCols = [
+      "Hunters Density Per Sq. Mile",
+      "Hunters Density Per Public Sq. Mile",
+      "percent_public"
+    ];
+
+    targetCols.forEach(col => {
+      const values = results.data
+        .map(r => {
+          const raw = String(r[col] ?? "").trim();
+          const cleaned = raw.replace(/[,()%\s]/g, "").replace(/[^\d.\-]/g, "");
+          const n = parseFloat(cleaned);
+          return isNaN(n) ? null : n;
+        })
+        .filter(v => v !== null)
+        .sort((a, b) => a - b);
+
+      if (values.length === 0) return;
+
+      const n = values.length;
+      const lowIndex = Math.floor(n * PERCENTILE_CLIP);
+      const highIndex = Math.floor(n * (1 - PERCENTILE_CLIP));
+
+      globalRanges[col] = {
+        min: values[lowIndex],
+        max: values[highIndex],
+        values
+      };
+    });
+  },
+  error: function(err) {
+    console.error("Error parsing antHarvest25.csv:", err);
+  }
+});
+
+let antHuntCodeMap = {};
+Papa.parse("ant25code_pages.csv", {
+  download: true,
+  header: true,
+  complete: function(results) {
+    results.data.forEach(row => {
+      if (row.HuntCode && row.Page) {
+        antHuntCodeMap[row.HuntCode] = row.Page;
+      }
+    });
+  }
+});
 
 
 
@@ -1229,4 +1434,24 @@ document.addEventListener("DOMContentLoaded", () => {
       headers: headerLabelsHarvestElk
     });
   }
+  if (document.body.classList.contains("Antdraw")) {
+    initTable({
+      tableId: "Antitemtable",
+      csvFile: "Fullant25Final.csv",
+      columns: visibleColumnsDrawAnt,
+      headers: headerLabelsDrawAnt,
+      renderFunction: renderAntDrawTable
+    });
+  }
+
+  if (document.body.classList.contains("Antharvest")) {
+    initTable({
+      tableId: "Antharvesttable",
+      csvFile: "antHarvest25.csv",
+      columns: visibleColumnsHarvestAnt,
+      headers: headerLabelsHarvestAnt
+    });
+  }
+
+
 });

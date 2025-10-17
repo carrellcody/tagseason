@@ -350,7 +350,9 @@ h2{
 #itemTable .subtable th:nth-child(6),
 #itemTable .subtable td:nth-child(6),
 #elkitemtable .subtable th:nth-child(6),
-#elkitemtable .subtable td:nth-child(6)
+#elkitemtable .subtable td:nth-child(6),
+#Antitemtable .subtable th:nth-child(6),
+#Atitemtable .subtable td:nth-child(6)
  {
   width: 300px;
   max-width: 300px  ;   /* or whatever width you want */
@@ -359,7 +361,9 @@ h2{
 #itemTable .subtable th:nth-child(7),
 #itemTable .subtable td:nth-child(7),
 #elkitemtable .subtable th:nth-child(7),
-#elkitemtable .subtable th:nth-child(7)
+#elkitemtable .subtable th:nth-child(7),
+#Antitemtable .subtable th:nth-child(7),
+#Antitemtable .subtable th:nth-child(7)
  {
   width: 100px;
   max-width: 100px  ;   /* or whatever width you want */
@@ -367,7 +371,8 @@ h2{
 }
 
 #deerharvesttable,
-#elkharvesttable {
+#elkharvesttable,
+#Antharvesttable {
   table-layout: fixed;
   width: 100%;
 }
@@ -376,7 +381,9 @@ h2{
 #deerharvesttable th:nth-child(2),
 #deerharvesttable td:nth-child(2),
 #elkharvesttable th:nth-child(2),
-#elkharvesttable td:nth-child(2) {
+#elkharvesttable td:nth-child(2),
+#Antharvesttable th:nth-child(2),
+#Antharvesttable td:nth-child(2) {
   width: 200px;
   max-width: 700px;
   white-space: normal; /* allow text wrapping */
@@ -386,12 +393,14 @@ h2{
 
 /* Make the filter panel narrower and the table wider only on harvest pages */
 body.deerharvest .filterinputs,
-body.elkharvest .filterinputs {
+body.elkharvest .filterinputs,
+body.antharvest .filterinputs{
   width: 30%;   /* was 40% */
 }
 
 body.deerharvest .table-container,
-body.elkharvest .table-container {
+body.elkharvest .table-container,
+body.antharvest .table-container {
   width: 70%;   /* was 60% */
 }
 

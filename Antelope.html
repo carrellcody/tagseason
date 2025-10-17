@@ -2,6 +2,159 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Zabre Co Antelope</title>
+  <title>Colorado Antelope Draw Odds 2025</title>
   <link rel="stylesheet" href="style.css">
+
 </head>
+<body class="Antdraw">
+<div class="page-header">
+  <h1 class="page-title">Colorado Antelope Draw Odds 2025</h1>
+  <div class="header-buttons">
+    <a href="index.html" class="top-button home-button" title="Home">🏠</a>
+    <a href="AntelopeHarvest.html" class="top-button">Antelope Harvest Stats</a>
+  </div>
+</div>
+
+
+<div class="layout">
+  <div class="filterinputs"> 
+      <h2>Filters</h2>
+
+  <!---Number of tags matching criteria-->
+    <p id="rowCount"></p>
+    <!-- Hunter Class selection -->
+    <div id="class" style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Hunter Class (Select one):</div>
+        <div class="classwrap">
+          <label><input type="radio" name="class" value="A_R" checked><span>Resident Adult</span></label>
+          <label><input type="radio" name="class" value="A_NR"><span>Non-Resident Adult</span></label>
+          <label><input type="radio" name="class" value="Y_R"><span>Resident Youth</span></label>
+          <label><input type="radio" name="class" value="Y_NR"><span>Non-Resident Youth</span></label>
+          <label><input type="radio" name="class" value="L_U"><span>Landowner Unrestricted</span></label>
+          <label><input type="radio" name="class" value="L_R"><span>Landowner Restricted</span></label>
+        </div> 
+      </div>
+    <br>
+
+      <!-- Range slider for Preperence points -->
+    <label for="PPSlide" style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Current preference points for Antelope (Any tags requiring more will be filtered out)</div>
+        <input type="number" id="PPSlide" value="35" step="1">       
+    </label>
+
+          <!-- Range slider for Preperence points -->
+    <label for="ppmin" style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Minimum points required (Tags requiring less than this will be filtered out)</div>
+        <input type="number" id="ppmin" value="0" step="1"> 
+           
+    </label>
+
+
+
+        <!-- <input type="number" id="minpp" placeholder="Min Prefence Points Required">
+        <input type="number" id="maxpp" placeholder="Max Prefence Points Required"> -->
+
+
+ 
+    
+      
+      <!-- Push buttons for weapons 
+      <div id="weapon" style="display: flex; align-items: center; gap: 10px;", class = "filter-row">
+        <div class="filter-header">Weapon:</div>
+        <label><input type="checkbox" name="weapon" value="R" checked><span>Rifle</span></label>
+        <label><input type="checkbox" name="weapon" value="A"><span>Archery</span></label>
+        <label><input type="checkbox" name="weapon" value="M"><span>Muzzleloader</span></label>
+        <label><input type="checkbox" name="weapon" value="" id="weaponAny"><span>Any</span></label>
+      </div>
+-->
+      <br>
+      <!-- Push buttons for Sex -->
+      <div id="sex" style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Sex:</div>
+          <label><input type="checkbox" name="sex" value="M" checked><span>Male</span></label>
+          <label><input type="checkbox" name="sex" value="F"><span>Female</span></label>
+          <label><input type="checkbox" name="sex" value="E"><span>Either</span></label>
+          <label><input type="checkbox" name="sex" value="Any" id="sexAny"><span>Any</span></label>
+      </div>
+
+      <!-- Push buttons for season -->
+      <div id="season" style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Season/Weapon:</div>
+        <wrap class="classwrap">  
+          <label><input type="checkbox" name="season" value="A"><span>Archery</span></label>
+          <label><input type="checkbox" name="season" value="M"><span>Muzzleloader</span></label>
+          <label><input type="checkbox" name="season" value="O1R"><span>First Rifle</span></label>
+          <label><input type="checkbox" name="season" value="O2R"><span>Second Rifle</span></label>
+          <label><input type="checkbox" name="season" value="O3R"><span>Third Rifle</span></label>
+          <label><input type="checkbox" name="season" value="O4R"><span>Fourth Rifle</span></label>
+          <label><input type="checkbox" name="season" value="E"><span>Early Rifle</span></label>
+          <label><input type="checkbox" name="season" value="L"><span>Late Rifle</span></label>
+          <label><input type="checkbox" name="season" value="Other" id="seasonOther"><span>Other (PLO, Season choice, RFW, etc.)</span></label>
+          <label><input type="checkbox" name="season" value="Any" id="seasonAny" checked><span>Any</span></label>
+        </wrap>
+      </div>
+
+      <br>
+      <!-- Show Private land only tags? -->
+        <div id="plo" style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Show Private land only tags?:</div>
+          <label><input type="radio" name="plo" value="Y" checked><span>Show All Tags</span></label>
+          <label><input type="radio" name="plo" value="N"><span>No, don't show any PLO tags</span></label>
+          <label><input type="radio" name="plo" value="P"><span>Show ONLY PLO tags</span></label>
+      </div>
+
+      <br>  
+      <!-- Show Ranching for wildlife tags?-->
+      <div id="rfw" style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Show Ranching for Wildlife tags?(Only available to residents)</div>
+          <label><input type="radio" name="rfw" value="Y" checked><span>Show All Tags</span></label>
+          <label><input type="radio" name="rfw" value="N"><span>No, don't show any RFW tags</span></label>
+          <label><input type="radio" name="rfw" value="R"><span>Show ONLY RFW tags</span></label>
+      </div>
+
+      <br>
+      <!-- Search bar for specific units -->
+      <div style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Search for specific units:</div>
+        <input type="text" id="specunit" placeholder="Separate units by commas to look for multiple">
+      </div>
+
+       <div id="noapps" style="display: flex; align-items: center; gap: 10px;" class="filter-row">
+        <div class="filter-header">Show tags with no applicants and/or no successful applicants?:</div>
+          <label><input type="radio" name="noapps" value="Yes"><span>Yes</span></label>
+          <label><input type="radio" name="noapps" value="No"checked><span>No</span></label>
+      </div>
+
+
+
+
+
+  </div> 
+
+
+  
+   
+  <div class="table-container">
+      <!-- Table -->
+      <table id="Antitemtable">
+        <thead></thead> <!-- will be built from CSV -->
+        <tbody></tbody> <!-- will be filled by JS -->
+      </table>
+
+    <!--Pagination buttons-->
+    <div>
+      <button id="prevPage">Previous</button>
+      <span id="pageInfo"></span>
+      <button id="nextPage">Next</button>
+    </div>
+  </div>
+</div>
+<!-- PapaParse: library to handle CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="script.js" defer></script>
+  <!-- your HTML page ... -->
+
+
+</body>
+</html>
+
